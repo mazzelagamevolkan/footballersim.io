@@ -1,0 +1,3305 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Career Simulator v8 FULL</title>
+  <style>
+    :root { --bg:#0b1220; --muted:#9fb0d0; --text:#e8f0ff; --accent:#6ee7ff; --good:#6cff8a; --bad:#ff6b6b; --warn:#ffd36e; }
+    *{ box-sizing:border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body{ margin:0; background:radial-gradient(1200px 700px at 20% 0%, #12224a 0%, var(--bg) 55%); color:var(--text); }
+    .wrap{ max-width:1150px; margin:0 auto; padding:18px; }
+    .topbar{ display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .brand{ font-weight:950; letter-spacing:.2px; }
+    .pill{ font-size:12px; color:var(--muted); border:1px solid rgba(255,255,255,.12); padding:6px 10px; border-radius:999px; }
+    .grid{ display:grid; grid-template-columns: 1.15fr .85fr; gap:14px; }
+    @media (max-width: 980px){ .grid{ grid-template-columns:1fr; } }
+    .panel{ background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.10); border-radius:16px; padding:14px; }
+    .panel h2{ margin:4px 0 10px; font-size:18px; }
+    .muted{ color:var(--muted); }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .btn{
+      background:rgba(110,231,255,.12);
+      border:1px solid rgba(110,231,255,.35);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:900;
+    }
+    .btn:hover{ filter:brightness(1.08); }
+    .btn.secondary{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.14); font-weight:800; }
+    .btn.danger{ background:rgba(255,107,107,.12); border-color:rgba(255,107,107,.35); }
+    .btn.good{ background:rgba(108,255,138,.10); border-color:rgba(108,255,138,.28); }
+    .btn.warn{ background:rgba(255,211,110,.10); border-color:rgba(255,211,110,.28); }
+    .btn:disabled{ opacity:.45; cursor:not-allowed; }
+    .btn.full{ width:100%; justify-content:center; display:flex; }
+    .card{ background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.10); border-radius:14px; padding:12px; }
+    .card + .card{ margin-top:10px; }
+    .kvs{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    @media (max-width:720px){ .kvs{ grid-template-columns:1fr; } }
+    .kv{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:10px; }
+    .kv .k{ font-size:12px; color:var(--muted); }
+    .kv .v{ font-size:16px; font-weight:950; margin-top:2px; }
+    .big{ font-size:26px; font-weight:950; letter-spacing:.2px; }
+    .tag{ display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:999px; border:1px solid rgba(255,255,255,.12); color:var(--muted); font-size:12px; }
+    .tag.good{ border-color:rgba(108,255,138,.35); color:rgba(108,255,138,.95); }
+    .tag.bad{ border-color:rgba(255,107,107,.35); color:rgba(255,107,107,.95); }
+    .tag.warn{ border-color:rgba(255,211,110,.35); color:rgba(255,211,110,.95); }
+    .hr{ height:1px; background:rgba(255,255,255,.10); margin:12px 0; }
+    .foot{ margin-top:12px; font-size:12px; color:rgba(159,176,208,.92); line-height:1.35; }
+    select,input{ width:100%; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.20); color:var(--text); }
+    label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
+    .hidden{ display:none !important; }
+    .two{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    @media (max-width:800px){ .two{ grid-template-columns:1fr; } }
+
+    /* ── Mobile-first rework ── */
+    .screen-game{ display:block; }
+    .tab-bar{
+      display:flex;
+      margin-bottom:14px;
+      border-radius:14px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.20);
+    }
+    .tab-btn{
+      flex:1;
+      padding:14px 8px;
+      background:transparent;
+      border:none;
+      border-right:1px solid rgba(255,255,255,.10);
+      color:var(--muted);
+      cursor:pointer;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:.2px;
+      transition:background .15s, color .15s;
+    }
+    .tab-btn:last-child{ border-right:none; }
+    .tab-btn.active{ background:rgba(110,231,255,.14); color:var(--accent); }
+    .tab-content{ display:none; }
+    .tab-content.active{ display:block; }
+    .play-bar{
+      position:fixed;
+      bottom:0; left:0; right:0;
+      padding:10px 18px 16px;
+      background:rgba(11,18,32,.96);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+      border-top:1px solid rgba(255,255,255,.12);
+      z-index:100;
+    }
+    .wrap{ padding-bottom:96px; }
+    .btn{ min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
+    select,input{ min-height:44px; }
+    .log{ white-space:pre-line; font-size:13px; color:rgba(232,240,255,.92); line-height:1.35; }
+
+    .overlay{
+      position:fixed; inset:0;
+      background:rgba(6,10,20,.74);
+      backdrop-filter: blur(6px);
+      display:flex; align-items:center; justify-content:center;
+      z-index:9999;
+    }
+    .overlayCard{
+      background:rgba(0,0,0,.30);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:18px 18px 16px;
+      width:min(520px, 92vw);
+      text-align:center;
+    }
+    .ball{
+      font-size:56px;
+      display:inline-block;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
+    .overlayText{ margin-top:10px; color:rgba(232,240,255,.92); font-weight:950; letter-spacing:.2px; }
+    .overlaySub{ margin-top:6px; color:rgba(159,176,208,.95); font-size:12px; line-height:1.35; }
+
+    .modalWrap{
+      position:fixed; inset:0;
+      display:none;
+      align-items:center; justify-content:center;
+      background:rgba(0,0,0,.66);
+      z-index:9998;
+    }
+    .modal{
+      width:min(680px, 92vw);
+      background:rgba(10,14,28,.92);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:16px;
+      padding:14px;
+    }
+    .modalTitle{ font-size:18px; font-weight:950; }
+    .modalDesc{ margin-top:6px; color:rgba(159,176,208,.96); line-height:1.4; }
+    .modalOutcome{
+      margin-top:12px;
+      padding:10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.05);
+      white-space:pre-line;
+    }
+    /* ── Sticky header ── */
+    .sticky-header{
+      position:sticky; top:0; z-index:50;
+      background:rgba(11,18,32,.97);
+      backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+      border-bottom:1px solid rgba(255,255,255,.09);
+      margin:-18px -18px 14px; padding:10px 18px 0;
+    }
+    .sh-row1{ display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; }
+    .sh-brand{ display:flex; align-items:center; gap:7px; }
+    .sh-ball{ font-size:18px; }
+    .sh-title{ font-weight:950; font-size:15px; }
+    .sh-ver{ color:var(--muted); font-size:10px; font-weight:400; margin-left:4px; }
+    .sh-state{ font-size:11px; color:var(--muted); border:1px solid rgba(255,255,255,.12); padding:5px 10px; border-radius:999px; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sh-player{
+      display:none; gap:0; padding:8px 0 10px;
+      border-top:1px solid rgba(255,255,255,.07);
+    }
+    .sh-player.on{ display:flex; }
+    .sh-stat{ flex:1; text-align:center; }
+    .sh-k{ display:block; font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; }
+    .sh-v{ display:block; font-size:14px; font-weight:950; margin-top:1px; }
+    .sh-sep{ width:1px; background:rgba(255,255,255,.09); margin:2px 0; }
+
+    /* ── Achievement grid (hub tab) ── */
+    .ach-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    @media(max-width:540px){ .ach-grid{ grid-template-columns:repeat(2,1fr); } }
+    .ach-item{ border-radius:12px; border:1px solid rgba(255,255,255,.09); padding:10px 6px 8px; text-align:center; transition:.2s; }
+    .ach-item.earned{ border-color:rgba(255,211,110,.40); background:rgba(255,211,110,.07); }
+    .ach-item.locked{ opacity:.28; filter:grayscale(1); }
+    .ach-icon2{ font-size:26px; display:block; margin-bottom:3px; }
+    .ach-nm2{ font-size:11px; font-weight:800; line-height:1.2; }
+    .ach-desc2{ font-size:10px; color:var(--muted); margin-top:3px; line-height:1.2; }
+
+    /* ── League table (hub tab + results) ── */
+    .league-tbl{ width:100%; border-collapse:collapse; font-size:13px; }
+    .league-tbl thead tr{ position:sticky; top:0; background:rgba(10,14,28,.95); }
+    .league-tbl th{ padding:8px 6px; text-align:left; border-bottom:1px solid rgba(255,255,255,.10); color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.05em; }
+    .league-tbl td{ padding:7px 6px; border-bottom:1px solid rgba(255,255,255,.05); }
+    .league-tbl tr.me td{ background:rgba(110,231,255,.06); font-weight:700; }
+    .league-tbl tr.champ td{ background:rgba(255,211,110,.06); }
+    .league-tbl tr.rel td{ background:rgba(255,107,107,.05); }
+    .league-tbl .pos-num{ font-weight:950; font-size:13px; width:24px; }
+    .league-tbl .pts{ font-weight:700; color:var(--accent); }
+    .league-tbl .str{ color:var(--muted); font-size:11px; }
+    .league-tbl-wrap{ overflow:auto; max-height:52vh; border:1px solid rgba(255,255,255,.08); border-radius:12px; }
+
+    /* ── Summary screen ── */
+    .retire-hero{ text-align:center; padding:18px 0 10px; }
+    .retire-title{ font-size:13px; color:var(--warn); text-transform:uppercase; letter-spacing:.12em; }
+    .retire-name{ font-size:28px; font-weight:950; margin:4px 0; }
+    .retire-meta{ font-size:13px; color:var(--muted); }
+    .retire-badge{ font-size:44px; margin:8px 0 4px; }
+    .stat-big{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:12px; }
+    @media(max-width:500px){ .stat-big{ grid-template-columns:1fr; } }
+    .stat-big-item{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:14px 12px; text-align:center; }
+    .stat-big-item .sbk{ font-size:11px; color:var(--muted); margin-bottom:4px; }
+    .stat-big-item .sbv{ font-size:26px; font-weight:950; }
+    @keyframes fadeInUp{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:translateY(0); } }
+    .anim-fiu{ animation:fadeInUp .45s cubic-bezier(.22,1,.36,1) both; }
+
+    /* ── Goal reveal & achievement overlays ── */
+    @keyframes slideUp   { from{ transform:translateY(48px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+    @keyframes popIn     { from{ transform:scale(.65); opacity:0; } to{ transform:scale(1); opacity:1; } }
+    @keyframes resultPop { 0%{ transform:scale(.8); opacity:0; } 60%{ transform:scale(1.08); } 100%{ transform:scale(1); opacity:1; } }
+    @keyframes shimmer   { 0%,100%{ opacity:.75; } 50%{ opacity:1; filter:brightness(1.25); } }
+    @keyframes badgeBounce { 0%{ transform:scale(0) rotate(-15deg); } 60%{ transform:scale(1.2) rotate(4deg); } 80%{ transform:scale(.95); } 100%{ transform:scale(1) rotate(0); } }
+
+    .goalRevealOverlay{
+      position:fixed; inset:0;
+      background:rgba(6,10,22,.88);
+      backdrop-filter:blur(8px);
+      display:flex; align-items:center; justify-content:center;
+      z-index:9997;
+    }
+    .goalRevealCard{
+      width:min(460px, 90vw);
+      background:rgba(10,14,28,.95);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:20px;
+      padding:28px 22px 22px;
+      text-align:center;
+      animation: slideUp .38s cubic-bezier(.22,1,.36,1) both;
+    }
+    .goalRevealType{ font-size:12px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; margin-bottom:10px; }
+    .goalRevealLabel{ font-size:20px; font-weight:950; line-height:1.25; margin-bottom:18px; }
+    .goalRevealResult{
+      font-size:52px; margin-bottom:8px;
+      opacity:0;
+      transition: opacity .1s;
+    }
+    .goalRevealResult.show{ animation: resultPop .45s cubic-bezier(.22,1,.36,1) both; opacity:1; }
+    .goalRevealOutcome{ font-size:15px; font-weight:700; margin-bottom:22px; min-height:22px; }
+
+    .achOverlay{
+      position:fixed; inset:0;
+      background:rgba(6,10,22,.9);
+      backdrop-filter:blur(10px);
+      display:flex; align-items:center; justify-content:center;
+      z-index:9996;
+    }
+    .achCard{
+      width:min(400px, 88vw);
+      background:rgba(10,14,28,.96);
+      border-radius:20px;
+      padding:30px 22px 24px;
+      text-align:center;
+      animation: slideUp .38s cubic-bezier(.22,1,.36,1) both;
+    }
+    .achBadge{ font-size:64px; display:block; margin-bottom:4px; animation: badgeBounce .6s .15s cubic-bezier(.22,1,.36,1) both; }
+    .achUnlocked{ font-size:11px; letter-spacing:.14em; color:var(--warn); text-transform:uppercase; margin-bottom:8px; animation: shimmer 1.4s .5s ease-in-out infinite; }
+    .achName{ font-size:22px; font-weight:950; margin-bottom:6px; }
+    .achDesc{ font-size:14px; color:var(--muted); margin-bottom:22px; line-height:1.4; }
+    .achBorder-gold{ border:1px solid rgba(255,211,110,.45); box-shadow:0 0 28px rgba(255,211,110,.12); }
+    .achBorder-blue{ border:1px solid rgba(110,231,255,.35); box-shadow:0 0 28px rgba(110,231,255,.10); }
+    .achBorder-green{ border:1px solid rgba(108,255,138,.35); box-shadow:0 0 28px rgba(108,255,138,.10); }
+    .achBorder-red{ border:1px solid rgba(255,107,107,.35); }
+
+    .prog-wrap{ margin-top:5px; }
+    .prog-track{ height:6px; border-radius:3px; background:rgba(255,255,255,.10); overflow:hidden; }
+    .prog-fill{ height:100%; border-radius:3px; width:0%; transition:width .7s cubic-bezier(.4,0,.2,1); }
+    .prog-fill.f-rating{ background:linear-gradient(90deg,#6ee7ff,#a78bfa); }
+    .prog-fill.f-rep{ background:linear-gradient(90deg,#6cff8a,#ffd36e); }
+    .kv-delta{ font-size:11px; font-weight:700; margin-left:6px; }
+    .kv-delta.pos{ color:var(--good); }
+    .kv-delta.neg{ color:var(--bad); }
+
+    /* ── Leaderboard ── */
+    .lb-wrap{ overflow:auto; max-height:320px; border-radius:12px; border:1px solid rgba(255,255,255,.08); }
+    .lb-tbl{ width:100%; border-collapse:collapse; font-size:12px; }
+    .lb-tbl th{ padding:8px 7px; text-align:left; background:rgba(10,14,28,.95); border-bottom:1px solid rgba(255,255,255,.10); color:var(--muted); font-size:10px; letter-spacing:.05em; position:sticky; top:0; }
+    .lb-tbl td{ padding:7px 7px; border-bottom:1px solid rgba(255,255,255,.04); }
+    .lb-tbl tr:last-child td{ border-bottom:none; }
+    .lb-tbl tr.lb-me td{ background:rgba(110,231,255,.07); font-weight:700; }
+    .lb-rank{ font-weight:950; width:22px; }
+    .lb-rank.r1{ color:#FFD700; }
+    .lb-rank.r2{ color:#C0C0C0; }
+    .lb-rank.r3{ color:#CD7F32; }
+    .lb-score{ font-weight:950; color:var(--warn); }
+    .lb-name{ max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .continue-btn-wrap{ margin-bottom:12px; }
+  </style>
+</head>
+<body>
+
+<!-- GOAL REVEAL OVERLAY -->
+<div id="goalRevealOverlay" class="goalRevealOverlay" style="display:none">
+  <div class="goalRevealCard" id="goalRevealCard">
+    <div class="goalRevealType" id="goalRevealType">KULÜP HEDEFİ</div>
+    <div class="goalRevealLabel" id="goalRevealLabel">-</div>
+    <div class="goalRevealResult" id="goalRevealResult">-</div>
+    <div class="goalRevealOutcome" id="goalRevealOutcome"></div>
+    <button class="btn good full" id="btnGoalNext">DEVAM →</button>
+  </div>
+</div>
+
+<!-- ACHIEVEMENT OVERLAY -->
+<div id="achOverlay" class="achOverlay" style="display:none">
+  <div class="achCard achBorder-gold" id="achCard">
+    <span class="achBadge" id="achBadge">🏆</span>
+    <div class="achUnlocked">✦ BAŞARIM AÇILDI ✦</div>
+    <div class="achName" id="achName">-</div>
+    <div class="achDesc" id="achDesc">-</div>
+    <button class="btn good full" id="btnAchNext">DEVAM →</button>
+  </div>
+</div>
+
+<div id="loader" class="overlay hidden" aria-hidden="true">
+  <div class="overlayCard">
+    <div class="ball">⚽</div>
+    <div class="overlayText" id="loaderText">Simüle ediliyor…</div>
+    <div class="overlaySub" id="loaderSub">Lütfen bekle…</div>
+  </div>
+</div>
+
+<div id="modalWrap" class="modalWrap">
+  <div class="modal">
+    <div class="row" style="justify-content:space-between">
+      <div class="modalTitle" id="modalTitle">KART</div>
+      <div class="tag" id="modalStep">1/3</div>
+    </div>
+    <div class="modalDesc" id="modalDesc">...</div>
+    <div class="modalOutcome" id="modalOutcome">Kartı çevir…</div>
+    <div class="hr"></div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn secondary" id="btnReveal">KARTI ÇEVİR</button>
+      <button class="btn good hidden" id="btnNext">DEVAM</button>
+    </div>
+    <div class="foot" id="modalFoot">Tryout</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="sticky-header">
+    <div class="sh-row1">
+      <div class="sh-brand">
+        <span class="sh-ball">⚽</span>
+        <span class="sh-title">Career Simulator<span class="sh-ver">v8</span></span>
+      </div>
+      <div class="sh-state" id="pillState">Menü</div>
+    </div>
+    <div class="sh-player" id="shPlayer">
+      <div class="sh-stat"><span class="sh-k">Yaş</span><span class="sh-v" id="shAge">-</span></div>
+      <div class="sh-sep"></div>
+      <div class="sh-stat"><span class="sh-k">Rating</span><span class="sh-v" id="shRating">-</span></div>
+      <div class="sh-sep"></div>
+      <div class="sh-stat"><span class="sh-k">Rep</span><span class="sh-v" id="shRep">-</span></div>
+      <div class="sh-sep"></div>
+      <div class="sh-stat"><span class="sh-k">Sezon</span><span class="sh-v" id="shSeason">-</span></div>
+      <div class="sh-sep"></div>
+      <div class="sh-stat"><span class="sh-k">📱</span><span class="sh-v" id="shFollowers">-</span></div>
+    </div>
+  </div>
+
+  <!-- MENU -->
+  <div id="screenMain" class="panel">
+    <h2>Career Simulator</h2>
+
+    <div id="continueWrap" class="continue-btn-wrap hidden">
+      <button class="btn good full" id="btnContinue">▶ Kariyere Devam Et</button>
+      <div class="foot" id="continueInfo" style="margin-top:6px;text-align:center">—</div>
+      <div class="hr"></div>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <div class="big">Kendi Karakterin</div>
+        <div class="muted">Ülke seç, 16 yaşında deneme kampı ile başla.</div>
+        <div style="margin-top:10px">
+          <button class="btn full" id="btnGoCustom">KARAKTER YARAT</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="big">Legend Mode</div>
+        <div class="muted">Kurgusal yıldız seç → deneme kampı → kariyer.</div>
+        <div style="margin-top:10px">
+          <button class="btn full" id="btnGoLegend">YILDIZ SEÇ</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+    <div class="card">
+      <div class="big" style="margin-bottom:10px">🏆 Liderlik Tablosu</div>
+      <div class="lb-wrap">
+        <table class="lb-tbl">
+          <thead><tr>
+            <th>#</th><th>İsim</th><th>Pos</th><th>Puan</th><th>Gol</th><th>S</th>
+          </tr></thead>
+          <tbody id="lbBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM CREATE -->
+  <div id="screenCustom" class="panel hidden">
+    <h2>Kendi Karakterini Yarat</h2>
+    <div class="two">
+      <div>
+        <label>İsim (opsiyonel)</label>
+        <input id="inpName" placeholder="Örn: Korhan" />
+      </div>
+      <div>
+        <label>Pozisyon</label>
+        <select id="selPos">
+          <option value="ST">ST (Forvet)</option>
+          <option value="CM">CM (Orta saha)</option>
+        </select>
+      </div>
+    </div>
+
+    <label>Ülke</label>
+    <select id="selNation"></select>
+
+    <div class="hr"></div>
+    <div class="row">
+      <button class="btn secondary" id="btnBackFromCustom">← Menü</button>
+      <button class="btn good" id="btnStartCustom">Deneme Kampına Gir</button>
+    </div>
+  </div>
+
+  <!-- LEGEND SELECT -->
+  <div id="screenLegend" class="panel hidden">
+    <h2>Legend Mode</h2>
+    <div class="muted">Gerçek isim yok. Tamamen kurgusal.</div>
+    <div class="hr"></div>
+    <div class="two">
+      <div class="card" id="legendList"></div>
+      <div class="card">
+        <div class="big" id="legendName">Seçim yok</div>
+        <div class="muted" id="legendMeta">Bir oyuncu seç.</div>
+        <div class="hr"></div>
+        <div class="kvs" id="legendKvs"></div>
+        <div class="hr"></div>
+        <button class="btn good full" id="btnStartLegend" disabled>Deneme Kampına Gir</button>
+        <button class="btn secondary full" id="btnBackFromLegend" style="margin-top:8px">← Menü</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME HUB -->
+  <div id="screenGame" class="screen-game hidden">
+
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="tabStats">📊 Durum</button>
+      <button class="tab-btn" data-tab="tabOffers">📋 Teklifler</button>
+      <button class="tab-btn" data-tab="tabAch">🏆 Başarım</button>
+      <button class="tab-btn" data-tab="tabLig">⚽ Lig</button>
+    </div>
+
+    <!-- TAB: Stats -->
+    <div id="tabStats" class="tab-content active">
+      <div class="panel">
+        <div class="kvs">
+          <div class="kv"><div class="k">Oyuncu</div><div class="v" id="vName">-</div></div>
+          <div class="kv"><div class="k">Ülke / Pozisyon</div><div class="v" id="vNationPos">-</div></div>
+          <div class="kv"><div class="k">Yaş / Sezon</div><div class="v" id="vAgeSeason">-</div></div>
+          <div class="kv"><div class="k">Kulüp</div><div class="v" id="vClub">-</div></div>
+          <div class="kv"><div class="k">Lig Seviyesi</div><div class="v" id="vDivision">-</div></div>
+          <div class="kv">
+            <div class="k">Rating</div>
+            <div class="v"><span id="vRating">-</span><span class="kv-delta" id="dRating"></span></div>
+            <div class="prog-wrap"><div class="prog-track"><div class="prog-fill f-rating" id="barRating"></div></div></div>
+          </div>
+          <div class="kv">
+            <div class="k">Rep</div>
+            <div class="v"><span id="vRep">-</span><span class="kv-delta" id="dRep"></span></div>
+            <div class="prog-wrap"><div class="prog-track"><div class="prog-fill f-rep" id="barRep"></div></div></div>
+          </div>
+          <div class="kv"><div class="k">Followers</div><div class="v" id="vFollowers">-</div></div>
+          <div class="kv"><div class="k">Market / Maaş</div><div class="v" id="vValueWage">-</div></div>
+          <div class="kv"><div class="k">Sözleşme</div><div class="v" id="vContract">-</div></div>
+          <div class="kv"><div class="k">Hedefler</div><div class="v" id="vGoalsText">-</div></div>
+        </div>
+        <div class="hr"></div>
+        <div class="kvs">
+          <div class="kv"><div class="k">Toplam Gol</div><div class="v" id="vGoals">0</div></div>
+          <div class="kv"><div class="k">Toplam Asist</div><div class="v" id="vAssists">0</div></div>
+          <div class="kv"><div class="k">Lig Şamp.</div><div class="v" id="vLeagueTitles">0</div></div>
+          <div class="kv"><div class="k">Kıta Kupası</div><div class="v" id="vIntlTitles">0</div></div>
+        </div>
+        <div class="hr"></div>
+        <div class="row">
+          <button class="btn secondary" id="btnSummary">Kariyer Özeti</button>
+          <button class="btn danger" id="btnReset">Sıfırla</button>
+        </div>
+        <div class="foot" id="hubFoot">—</div>
+      </div>
+    </div>
+
+    <!-- TAB: Offers -->
+    <div id="tabOffers" class="tab-content">
+      <div class="panel">
+        <div class="muted" id="offerSubtitle">-</div>
+        <div class="hr"></div>
+        <div id="offerList"></div>
+      </div>
+    </div>
+
+    <!-- TAB: Başarımlar -->
+    <div id="tabAch" class="tab-content">
+      <div class="panel">
+        <div class="muted" style="margin-bottom:10px">Açılan başarımlar renkli, kilitliler soluk görünür.</div>
+        <div class="ach-grid" id="achGrid"></div>
+      </div>
+    </div>
+
+    <!-- TAB: Lig Tablosu -->
+    <div id="tabLig" class="tab-content">
+      <div class="panel">
+        <div class="muted" id="ligTabMeta" style="margin-bottom:10px">Henüz sezon oynanmadı.</div>
+        <div class="league-tbl-wrap" id="ligTabWrap" style="display:none">
+          <table class="league-tbl"><thead><tr>
+            <th class="pos-num">#</th><th>Takım</th><th>Puan</th><th>Güç</th>
+          </tr></thead>
+          <tbody id="ligTabBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fixed play bar -->
+    <div class="play-bar">
+      <div class="foot" id="hint">Teklif seçmeden sezon oynayamazsın.</div>
+      <button class="btn good full" id="btnPlaySeason" disabled>▶ PLAY SEASON</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="screenResults" class="panel hidden">
+    <h2>Sezon Sonuçları</h2>
+    <div class="muted" id="resHeader">-</div>
+    <div class="hr"></div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" data-res-tab="resTabOzet">📊 Özet</button>
+      <button class="tab-btn" data-res-tab="resTabDetay">📈 Detay</button>
+      <button class="tab-btn" data-res-tab="resTabSosyal">📣 Sosyal</button>
+    </div>
+
+    <!-- TAB: Özet -->
+    <div id="resTabOzet" class="tab-content active">
+      <div id="rLeagueEventBanner" class="hidden card" style="text-align:center;font-size:18px;font-weight:950;padding:16px;margin-bottom:12px;"></div>
+      <div class="kvs">
+        <div class="kv"><div class="k">Kulüp / Güç</div><div class="v" id="rClub">-</div></div>
+        <div class="kv"><div class="k">Lig</div><div class="v" id="rDivision">-</div></div>
+        <div class="kv"><div class="k">Lig Bitişi</div><div class="v" id="rLeagueFinish">-</div></div>
+        <div class="kv"><div class="k">Maç</div><div class="v" id="rMatches">-</div></div>
+        <div class="kv"><div class="k">Gol / Lig Sırası</div><div class="v" id="rGoalsRank">-</div></div>
+        <div class="kv"><div class="k">Asist / Lig Sırası</div><div class="v" id="rAssistsRank">-</div></div>
+        <div class="kv"><div class="k">Kulüp Hedefi</div><div class="v" id="rClubGoal">-</div></div>
+        <div class="kv"><div class="k">Kişisel Hedef</div><div class="v" id="rPersonalGoal">-</div></div>
+      </div>
+      <div class="hr"></div>
+      <div class="kvs">
+        <div class="kv"><div class="k">Rating Δ</div><div class="v" id="rRatingDelta">-</div></div>
+        <div class="kv"><div class="k">Rep Δ</div><div class="v" id="rRepDelta">-</div></div>
+      </div>
+    </div>
+
+    <!-- TAB: Detay -->
+    <div id="resTabDetay" class="tab-content">
+      <div class="kvs">
+        <div class="kv"><div class="k">PerfScore</div><div class="v" id="rPerf">-</div></div>
+        <div class="kv"><div class="k">Sezon Tipi</div><div class="v" id="rSeasonFlavor">-</div></div>
+        <div class="kv"><div class="k">Followers Δ</div><div class="v" id="rFollowers">-</div></div>
+        <div class="kv"><div class="k">Value Δ</div><div class="v" id="rValue">-</div></div>
+        <div class="kv"><div class="k">Sezon Kazanç</div><div class="v" id="rCash">-</div></div>
+        <div class="kv"><div class="k">Kritik Sezon</div><div class="v" id="rCritical">-</div></div>
+        <div class="kv"><div class="k">Lig Olayı</div><div class="v" id="rLeagueEvent">-</div></div>
+        <div class="kv"><div class="k">Rating Δ / Rep Δ</div><div class="v" id="rRatingRep">-</div></div>
+        <div class="kv" style="grid-column:1/-1"><div class="k">Zar Olayları</div><div class="v" id="rDiceSummary">-</div></div>
+        <div class="kv" style="grid-column:1/-1"><div class="k">Legendary Growth</div><div class="v" id="rLegendary">-</div></div>
+      </div>
+    </div>
+
+    <!-- TAB: Sosyal -->
+    <div id="resTabSosyal" class="tab-content">
+      <div class="card">
+        <div class="log" id="rTweets" style="font-size:13px;line-height:1.55;"></div>
+      </div>
+      <div class="hr"></div>
+      <div class="card">
+        <div class="log" id="rEvent" style="font-size:14px;line-height:1.65;color:rgba(232,240,255,.92);"></div>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+    <div class="row">
+      <button class="btn secondary" id="btnBackToHub">Sezon Merkezine Dön</button>
+      <button class="btn secondary" id="btnLeagueTable">Lig Tablosu</button>
+      <button class="btn good" id="btnNextSeason">NEXT SEASON</button>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div id="screenSummary" class="panel hidden">
+
+    <div class="retire-hero">
+      <div class="retire-badge" id="sHeroBadge">🎖️</div>
+      <div class="retire-title" id="sHeroTier">-</div>
+      <div class="retire-name" id="sHeroName">-</div>
+      <div class="retire-meta" id="sHeroMeta">-</div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" data-sum-tab="sumTabKariyer">🏆 Kariyer</button>
+      <button class="tab-btn" data-sum-tab="sumTabGecmis">📅 Geçmiş</button>
+      <button class="tab-btn" data-sum-tab="sumTabBas">🎖️ Başarımlar</button>
+    </div>
+
+    <!-- TAB: Kariyer -->
+    <div id="sumTabKariyer" class="tab-content active">
+      <div class="stat-big" id="sumStatBig">
+        <div class="stat-big-item anim-fiu" style="animation-delay:.05s">
+          <div class="sbk">Toplam Gol</div><div class="sbv" id="sGoals">-</div>
+        </div>
+        <div class="stat-big-item anim-fiu" style="animation-delay:.10s">
+          <div class="sbk">Toplam Asist</div><div class="sbv" id="sAssists">-</div>
+        </div>
+        <div class="stat-big-item anim-fiu" style="animation-delay:.15s">
+          <div class="sbk">Lig Şamp.</div><div class="sbv" id="sLeague">-</div>
+        </div>
+        <div class="stat-big-item anim-fiu" style="animation-delay:.20s">
+          <div class="sbk">Kıta Kupası</div><div class="sbv" id="sIntl">-</div>
+        </div>
+        <div class="stat-big-item anim-fiu" style="animation-delay:.25s">
+          <div class="sbk">Emekli Rating</div><div class="sbv" id="sRetireRating">-</div>
+        </div>
+        <div class="stat-big-item anim-fiu" style="animation-delay:.28s">
+          <div class="sbk">Peak Rating</div><div class="sbv" id="sPeakRating">-</div>
+        </div>
+        <div class="stat-big-item anim-fiu" style="animation-delay:.30s">
+          <div class="sbk">Rep</div><div class="sbv" id="sRep">-</div>
+        </div>
+        <div class="stat-big-item anim-fiu" style="animation-delay:.35s">
+          <div class="sbk">Toplam Kazanç</div><div class="sbv" id="sCash">-</div>
+        </div>
+        <div class="stat-big-item anim-fiu" style="animation-delay:.40s">
+          <div class="sbk">Kariyer Puanı</div><div class="sbv" id="sScore">-</div>
+        </div>
+        <div class="stat-big-item anim-fiu" style="animation-delay:.45s">
+          <div class="sbk">Peak Followers</div><div class="sbv" id="sPeakFollowers">-</div>
+        </div>
+        <div class="stat-big-item anim-fiu" style="animation-delay:.50s">
+          <div class="sbk">En Yüksek Market</div><div class="sbv" id="sPeakValue">-</div>
+        </div>
+      </div>
+      <div class="hr"></div>
+      <div class="kvs">
+        <div class="kv" style="grid-column:1/-1">
+          <div class="k">Followers</div><div class="v" id="sFollowers">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Geçmiş -->
+    <div id="sumTabGecmis" class="tab-content">
+      <div class="card" style="margin-top:8px">
+        <div class="big">En İyi Sezon</div>
+        <div class="log" id="sBestSeason">-</div>
+      </div>
+      <div class="hr"></div>
+      <div class="card">
+        <div class="big">Kulüp Geçmişi</div>
+        <div class="log" id="sClubHistory">-</div>
+      </div>
+      <div class="hr"></div>
+      <div class="card">
+        <div class="big">Hafıza</div>
+        <div class="log" id="sMemory">-</div>
+      </div>
+    </div>
+
+    <!-- TAB: Başarımlar -->
+    <div id="sumTabBas" class="tab-content">
+      <div class="ach-grid" id="sumAchGrid" style="margin-top:8px"></div>
+    </div>
+
+    <div class="hr"></div>
+    <div class="row">
+      <button class="btn danger" id="btnReset2">Yeni Kariyer</button>
+    </div>
+    <div class="foot">Not: Kulüp/oyuncu isimleri kurgusaldır.</div>
+  </div>
+</div>
+
+<script>
+/* =========================
+   Helpers
+========================= */
+const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+const rnd=(min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+const pick=(arr)=>arr[Math.floor(Math.random()*arr.length)];
+function fmtMoneyM(m){ if(m>=1000) return "€"+(m/1000).toFixed(2)+"B"; return "€"+m.toFixed(1)+"M"; }
+function fmtFollowers(n){
+  if(n>=1_000_000) return (n/1_000_000).toFixed(n>=10_000_000?0:1)+"M";
+  if(n>=1_000) return (n/1_000).toFixed(n>=10_000?0:1)+"K";
+  return String(Math.round(n));
+}
+function stars(strength){
+  const s = clamp(Math.round((strength-55)/10),1,5);
+  return "★".repeat(s) + "☆".repeat(5-s);
+}
+function tier(score){
+  if(score>=1200) return "GOAT";
+  if(score>=800) return "Altın";
+  if(score>=450) return "Gümüş";
+  return "Bronz";
+}
+function leagueLabel(div){ return div===1 ? "D1 (Üst Lig)" : "D2 (Alt Lig)"; }
+
+const TEAMS_PER_DIV = 18;
+const PROMOTE_N = 2;
+const RELEGATE_N = 2;
+
+/* =========================
+   Loader & Modal
+========================= */
+const loader = document.getElementById("loader");
+const loaderText = document.getElementById("loaderText");
+const loaderSub = document.getElementById("loaderSub");
+function showLoader(title, sub){
+  loaderText.textContent = title || "Simüle ediliyor…";
+  loaderSub.textContent = sub || "Lütfen bekle…";
+  loader.classList.remove("hidden");
+  loader.setAttribute("aria-hidden","false");
+}
+function hideLoader(){
+  loader.classList.add("hidden");
+  loader.setAttribute("aria-hidden","true");
+}
+
+const modalWrap = document.getElementById("modalWrap");
+const modalTitle = document.getElementById("modalTitle");
+const modalDesc = document.getElementById("modalDesc");
+const modalOutcome = document.getElementById("modalOutcome");
+const modalStep = document.getElementById("modalStep");
+const btnReveal = document.getElementById("btnReveal");
+const btnNext = document.getElementById("btnNext");
+let modalCtx = null;
+
+function openModal(ctx){
+  modalCtx = ctx;
+  modalTitle.textContent = ctx.title || "KART";
+  modalDesc.textContent = ctx.desc || "";
+
+  // v8: tag/step kontrolü
+  if(ctx.tag){
+    modalStep.textContent = ctx.tag;
+    modalStep.classList.remove("hidden");
+  } else if(typeof ctx.stepIndex === "number" && typeof ctx.stepsTotal === "number"){
+    modalStep.textContent = `${ctx.stepIndex+1}/${ctx.stepsTotal}`;
+    modalStep.classList.remove("hidden");
+  } else {
+    modalStep.classList.add("hidden");
+  }
+
+  document.getElementById("modalFoot").textContent = ctx.foot || "";
+
+  // v8: bodyHTML desteği (tablo vb.)
+  if(ctx.bodyHTML){
+    modalOutcome.innerHTML = ctx.bodyHTML;
+    btnReveal.classList.add("hidden");
+    btnNext.classList.remove("hidden");
+    btnNext.textContent = ctx.nextLabel || "KAPAT";
+  } else {
+    modalOutcome.textContent = ctx.initialOutcome || "Kartı çevir…";
+    btnReveal.textContent = ctx.revealLabel || "KARTI ÇEVİR";
+    btnNext.textContent = ctx.nextLabel || "DEVAM";
+    btnReveal.classList.remove("hidden");
+    btnNext.classList.add("hidden");
+  }
+
+  modalWrap.style.display = "flex";
+}
+function closeModal(){ modalWrap.style.display = "none"; modalCtx = null; }
+
+btnReveal.onclick = ()=>{
+  if(!modalCtx) return;
+  const out = modalCtx.revealFn();
+  modalOutcome.textContent = out;
+  btnReveal.classList.add("hidden");
+  btnNext.classList.remove("hidden");
+};
+
+// ✅ FIX: önce close, sonra nextFn (tryout kapanma bug'u bitti)
+btnNext.onclick = ()=>{
+  const next = modalCtx && modalCtx.nextFn ? modalCtx.nextFn : null;
+  closeModal();
+  if(next) next();
+};
+
+/* =========================
+   Nations / Clubs (AUTO GENERATE: 18+18 per country)
+========================= */
+const NATIONS = ["Türkiye","Spain","France","Germany","England"];
+
+const COUNTRY_META = {
+  "Türkiye": { league:"Anatolia League" },
+  "Spain": { league:"Iberian League" },
+  "France": { league:"Hexagon League" },
+  "Germany": { league:"Bundesland League" },
+  "England": { league:"Crown League" },
+};
+
+// 36 isim / ülke (18 D1 + 18 D2). Kısa, kurgusal, çağrışımlı.
+const NAMESETS = {
+  "Türkiye": {
+    d1:["Galata Lions","Kadıköy Yellow-Navy","Karadeniz Fırtına","Bursa Crocs","İzmir Körfez","Capital Eagles","Adana Fire","Antalya Sun","Samsun Waves","Konya Steppes","Eskişehir Steam","Trabzon Harbor","Antep Forge","Sivas Snow","Kayseri Iron","Mersin Tide","Rize Green","Edirne Gate"],
+    d2:["Sakarya Green","Erzurum Ice","Denizli Marble","Kocaeli Steel","Aydın Fig","Manisa Thunder","Ordu North","Hatay Phoenix","Malatya Apricot","Balıkesir Wind","Çorum Reds","Tekirdağ Port","Diyarbakır Black","Van Lake","Isparta Rose","Bolu Forest","Kırıkkale Bullet","Uşak Purple"]
+  },
+  "Spain": {
+    d1:["Madrid Blancos","Catalunya Blau","Valencia Naranja","Sevilla Rojo","Bilbao Iron","San Sea","Villar Sun","Malaga Heat","Zaragoza Red","Vigo Tide","Granada White","Oviedo Blue","Murcia Sand","Cordoba Silk","Santander North","Toledo Steel","Gijon Wave","Pamplona Oak"],
+    d2:["Coruña North","Almeria Coast","Huelva Green","Tarragona Gold","Burgos Stone","Salamanca Ink","Leon Pride","Valladolid Violet","Jaen Olive","Lugo Mist","Girona Sky","Cadiz Sail","Elche Lime","Getafe Gray","Eibar Forge","Albacete White","Segovia Wall","Teruel Peaks"]
+  },
+  "France": {
+    d1:["Paris Lights","Marseille Sea","Lyon Silk","Nice Azure","Lille North","Bordeaux Wine","Monaco Gleam","Rennes Green","Strasbourg Steel","Nantes Wave","Montpellier Sun","Toulouse Pink","Reims Red","Metz Iron","Lens Gold","Saint-Etienne Coal","Dijon Dawn","Angers Black"],
+    d2:["Brest Harbor","Caen Shield","Le Havre Dock","Grenoble Snow","Nancy Violet","Amiens Fog","Tours Rose","Nimes Sand","Ajaccio Corsair","Clermont Lava","Orleans Crown","Rouen Raven","Sochaux Gear","Troyes Storm","Annecy Lake","Perpignan Heat","Limoges Porcelain","Poitiers Owl"]
+  },
+  "Germany": {
+    d1:["Berlin Iron","Munich Royal","Dortmund Yellow","Hamburg Harbor","Leipzig Red","Frankfurt Eagle","Stuttgart Engine","Leverkusen Chem","Bremen Wave","Hannover Green","Dresden Wall","Nuremberg Forge","Freiburg Forest","Mainz Wine","Augsburg Shield","Bochum Coal","Kiel Sail","Cologne Cathedral"],
+    d2:["Essen Steel","Karlsruhe Fan","Duisburg Port","Rostock Tide","Magdeburg Gear","Bielefeld Blue","Paderborn Cross","Regensburg Stone","Saarbrucken Coal","Osnabruck Oak","Ulm Sparrow","Jena Light","Kassel Crown","Wehen Arrow","Heidenheim Hill","Aachen Gate","Cottbus Sand","Ingolstadt Bolt"]
+  },
+  "England": {
+    d1:["London Kings","Manchester Red","Manchester Blue","Liverpool Tide","North Arsenal","Chelsea Blue","Tottenham Lily","Newcastle Coal","Birmingham Steel","Leeds White","Everton Dock","West Ham Hammers","Aston Lions","Wolves Gold","Brighton Wave","Nottingham Forest","Sheffield Blades","Leicester Foxes"],
+    d2:["Sunderland Wear","Middlesbrough Iron","Derby Rams","Stoke Potters","Norwich Canaries","Watford Hornets","Bristol City","Cardiff Dragons","Swansea Swans","Hull Tigers","Preston North","Blackburn Rovers","Coventry Sky","Reading Royals","QPR Hoops","Millwall Lions","Luton Hatters","Portsmouth Sail"]
+  }
+};
+
+function genClubsForCountry(country){
+  const league = COUNTRY_META[country].league;
+  const d1Names = NAMESETS[country].d1;
+  const d2Names = NAMESETS[country].d2;
+
+  // D1: 92..74 (18 takım), D2: 76..55 (18 takım)
+  const clubs = [];
+  const d1Start = 92, d1End = 74;
+  const d2Start = 76, d2End = 55;
+  for(let i=0;i<TEAMS_PER_DIV;i++){
+    const base = d1Start - Math.round((i*(d1Start-d1End))/(TEAMS_PER_DIV-1));
+    const strength = clamp(base + rnd(-1,1), 55, 92);
+    clubs.push({ id:`${country}_d1_${i}`, country, league, name:d1Names[i], strength, division:1 });
+  }
+  for(let i=0;i<TEAMS_PER_DIV;i++){
+    const base = d2Start - Math.round((i*(d2Start-d2End))/(TEAMS_PER_DIV-1));
+    const strength = clamp(base + rnd(-1,1), 55, 92);
+    clubs.push({ id:`${country}_d2_${i}`, country, league, name:d2Names[i], strength, division:2 });
+  }
+  return clubs;
+}
+
+const CLUBS = NATIONS.flatMap(genClubsForCountry);
+
+/* =========================
+   Legends
+========================= */
+const LEGENDS = [
+  {name:"Leo Mesi", nation:"Spain", pos:"ST", startAge:18, seedClubName:"Catalunya Blau", rating:78, rep:28},
+  {name:"Cristo Ronal", nation:"England", pos:"ST", startAge:18, seedClubName:"Manchester Red", rating:76, rep:22},
+  {name:"Ney San", nation:"France", pos:"CM", startAge:19, seedClubName:"Paris Lights", rating:79, rep:30},
+  {name:"Kyl An", nation:"France", pos:"ST", startAge:18, seedClubName:"Paris Lights", rating:82, rep:38},
+  {name:"Luka Modin", nation:"Spain", pos:"CM", startAge:20, seedClubName:"Zaragoza Red", rating:74, rep:18},
+  {name:"Kevin Debro", nation:"England", pos:"CM", startAge:20, seedClubName:"London Kings", rating:75, rep:20},
+];
+
+/* =========================
+   Career State
+========================= */
+const Career = {
+  mode:null,
+  name:"-",
+  nation:"-",
+  pos:"ST",
+  age:16,
+  season:1,
+
+  clubId:null,
+  clubName:"-",
+  league:"-",
+  division:2,
+  clubStrength:65,
+
+  role:"Starter",
+  rating:60,
+  rep:0,
+
+  valueM: 2.0,
+  peakValueM: 2.0,
+  peakRating: 60,
+  wageK: 20,
+  cashM: 0.0,
+  contractYearsLeft: 1,
+
+  followers: 110,
+  peakFollowers: 110,
+
+  clubHappiness: 55,
+  clubNeedMoney: 50,
+
+  clubGoal: null,
+  personalGoal: null,
+
+  goals:0, assists:0,
+  leagueTitles:0, intlTitles:0,
+  score:0,
+
+  clubHistory: [],
+  bestSeason: null,
+
+  lastOffers:[],
+  selectedOfferIndex:-1,
+  lastResult:null,
+
+  justRelegated:false,
+  justPromoted:false,
+  seasonsAtCurrentClub:0,
+
+  memoryFlags:{
+    cameBackUp:false,
+    wonTrophyAfter30:false,
+    clubLegend:false,
+    promotedCaptain:false,
+    legendaryUnlocked:false,   // 99 yolu açıldı mı
+    legendaryStory:false,      // bu sezon legendary story oldu mu
+  },
+
+  retired:false,
+  earnedAchievements: []
+};
+
+/* =========================
+   Retirement
+========================= */
+function retirementChanceByAge(age){
+  if (age < 34) return 0;
+  if (age === 34) return 10;
+  if (age === 35) return 20;
+  if (age === 36) return 30;
+  if (age === 37) return 50;
+  if (age === 38) return 60;
+  if (age === 39) return 70;
+  if (age === 40) return 80;
+  if (age === 41) return 90;
+  return 100;
+}
+function rollRetirementNextSeason(){
+  const chance = retirementChanceByAge(Career.age);
+  if (chance <= 0) return false;
+  if (chance >= 100) return true;
+  return rnd(1,100) <= chance;
+}
+
+/* =========================
+   Goals (18 team based)
+========================= */
+function clubGoalFromStrength(strength){
+  // 18 takım: düşme hattı 17-18. "Kümede kal" = 1..16
+  if(strength >= 88) return {label:"Top4 (Şampiyonluk Yarışı)", range:[1,4]};
+  if(strength >= 82) return {label:"Top6", range:[1,6]};
+  if(strength >= 74) return {label:"Top10", range:[1,10]};
+  return {label:"Kümede Kal", range:[1, TEAMS_PER_DIV-RELEGATE_N]}; // 1..16
+}
+function personalGoalFor(pos, strength){
+  const harder = strength >= 84 ? 1 : 0;
+  if(pos === "ST"){
+    const g = rnd(8+harder*2, 18+harder*3);
+    const ga = rnd(14+harder*2, 26+harder*3);
+    return {label:`G:${g} veya G+A:${ga}`, mode:"ST", g, ga};
+  } else {
+    const a = rnd(4+harder*1, 12+harder*2);
+    const ga = rnd(12+harder*2, 22+harder*3);
+    return {label:`A:${a} veya G+A:${ga}`, mode:"CM", a, ga};
+  }
+}
+function checkClubGoal(goal, leaguePos){
+  const [lo, hi] = goal.range;
+  if(lo===1 && hi===1) return leaguePos === 1;
+  return leaguePos <= hi;
+}
+function checkPersonalGoal(goal, goals, assists){
+  if(goal.mode==="ST") return (goals>=goal.g) || ((goals+assists)>=goal.ga);
+  return (assists>=goal.a) || ((goals+assists)>=goal.ga);
+}
+
+/* =========================
+   Role/minutes
+========================= */
+function computeRole(strength, rating){
+  const gap = strength - rating;
+  if(gap >= 14) return {role:"Rotation", minutes:0.45};
+  if(gap >= 7) return {role:"Starter", minutes:0.72};
+  return {role:"Star", minutes:0.92};
+}
+function roleMatches(minutes){
+  const full = rnd(34, 38);
+  let matches = Math.round(full * minutes + rnd(-2,2));
+  if(minutes <= 0.50) matches = clamp(matches, 8, 24);
+  else if(minutes <= 0.78) matches = clamp(matches, 18, 34);
+  else matches = clamp(matches, 26, 40);
+  return matches;
+}
+
+/* =========================
+   League simulation (18 teams) + movement
+========================= */
+function getCountryTeams(country, division){
+  return CLUBS.filter(t => t.country===country && t.division===division);
+}
+
+function weightedPick(items){
+  // items: [{id, w}]
+  const total = items.reduce((s,x)=>s + x.w, 0);
+  let r = Math.random() * total;
+  for(const it of items){
+    r -= it.w;
+    if(r <= 0) return it.id;
+  }
+  return items[items.length-1].id;
+}
+
+function simulateLeagueStandings(country, division){
+  const teams = getCountryTeams(country, division);
+
+  // base rows (for mid-table randomness)
+  const rows = teams.map(t=>{
+    const noise = rnd(-4, 4);
+    const shock = (rnd(1,100) <= 4) ? rnd(-9, 8) : 0;
+    const score = t.strength + noise + shock;
+    return { id:t.id, name:t.name, strength:t.strength, score };
+  });
+
+  // initial ordering
+  rows.sort((a,b)=>b.score-a.score);
+
+  // strength ranking (for top4/bottom6 rules)
+  const byStrength = [...teams].sort((a,b)=>b.strength-a.strength);
+  const top4Ids = byStrength.slice(0,4).map(x=>x.id);
+  const bottom6Ids = [...byStrength].reverse().slice(0,6).map(x=>x.id); // weakest 6
+
+  let championId = rows[0]?.id;
+  let miracleChampion = false;
+
+  // CHAMPION RULE:
+  // - Normally from top4, with weighted chances (1st higher)
+  // - BUT: %3 chance a non-top4 becomes champion ("mucize")
+  if(teams.length >= 4){
+    const miracleRoll = rnd(1,100);
+    if(miracleRoll <= 3){
+      const others = rows.filter(r=>!top4Ids.includes(r.id));
+      if(others.length){
+        // give slightly more weight to stronger among "others"
+        const othersByStr = [...others].sort((a,b)=>b.strength-a.strength);
+        const weights = othersByStr.map((r,idx)=>({id:r.id, w: Math.max(1, 14-idx)}));
+        championId = weightedPick(weights);
+        miracleChampion = true;
+      } else {
+        championId = weightedPick([
+          {id: top4Ids[0], w:50},
+          {id: top4Ids[1], w:40},
+          {id: top4Ids[2], w:35},
+          {id: top4Ids[3], w:30},
+        ]);
+      }
+    } else {
+      championId = weightedPick([
+        {id: top4Ids[0], w:50},
+        {id: top4Ids[1], w:40},
+        {id: top4Ids[2], w:35},
+        {id: top4Ids[3], w:30},
+      ]);
+    }
+  }
+
+  // force champion to #1 (keep the rest order)
+  if(championId){
+    const idx = rows.findIndex(r=>r.id===championId);
+    if(idx > 0){
+      const [champ] = rows.splice(idx,1);
+      rows.unshift(champ);
+    }
+  }
+
+  // RELEGATION CANDIDATES RULE (ONLY D1):
+  // - Weakest 6 are candidates, pick 2 (weakest has higher drop chance)
+  let relegatedIds = [];
+  if(division===1 && teams.length >= 6){
+    const bottom6 = bottom6Ids
+      .map(id=>rows.find(r=>r.id===id))
+      .filter(Boolean)
+      .sort((a,b)=>a.strength-b.strength); // weakest first
+
+    const w = [30,25,20,15,10,5]; // weakest -> highest
+    const pool = bottom6.map((r,i)=>({id:r.id, w:w[i] || 5}));
+
+    const first = weightedPick(pool);
+    const pool2 = pool.filter(x=>x.id!==first);
+    const second = weightedPick(pool2);
+    relegatedIds = [first, second];
+
+    // force relegated to bottom 2 (18 teams: 17-18)
+    const relRows = relegatedIds.map(id=>rows.find(r=>r.id===id)).filter(Boolean);
+    // remove them from rows
+    for(const rr of relRows){
+      const ix = rows.findIndex(x=>x.id===rr.id);
+      if(ix>=0) rows.splice(ix,1);
+    }
+    // append: weaker last or first? let's put worst to 18th
+    relRows.sort((a,b)=>a.strength-b.strength); // weakest first
+    // we want weakest at very bottom => append weakest last
+    rows.push(relRows[1] || relRows[0]);
+    rows.push(relRows[0]);
+  }
+
+  // finalize finishes + generate points (needed for league table UI)
+  rows.forEach((r,i)=>{
+    r.finish = i+1;
+
+    // points model: top ~ 90+, bottom ~ 20-30
+    // use a smooth curve with small wobble, then enforce strictly descending.
+    const base = 92 - i*3.15;
+    const wobble = rnd(-2, 2);
+    r.points = Math.round(clamp(base + wobble, 18, 95));
+  });
+
+  // ensure points are strictly descending (avoid equal/ascending due to wobble)
+  for(let i=1;i<rows.length;i++){
+    if(rows[i].points >= rows[i-1].points){
+      rows[i].points = rows[i-1].points - 1;
+    }
+  }
+
+  return {
+    rows,
+    championId,
+    relegatedIds,
+    top4Ids,
+    miracleChampion
+  };
+}
+
+function applyLeagueMovementForCountry(country, d1TableObj, d2TableObj){
+  // D1: relegatedIds (forced into bottom 2). D2: top2 promoted.
+  const d1Rows = d1TableObj.rows;
+  const d2Rows = d2TableObj.rows;
+
+  const relegated = (d1TableObj.relegatedIds && d1TableObj.relegatedIds.length)
+    ? d1TableObj.relegatedIds.slice(0, RELEGATE_N)
+    : d1Rows.slice(-RELEGATE_N).map(r=>r.id);
+
+  const promoted  = d2Rows.slice(0, PROMOTE_N).map(r=>r.id);
+
+  CLUBS.forEach(t=>{
+    if(t.country !== country) return;
+    if(relegated.includes(t.id)) t.division = 2;
+    if(promoted.includes(t.id)) t.division = 1;
+  });
+
+  return {relegated, promoted};
+}
+
+
+/* =========================
+   Followers & Twitter
+========================= */
+function updateFollowers(r){
+  let mult = (Career.division===1) ? 1.25 : 0.95;
+  let delta = 0;
+
+  if(r.perfScore >= 18) delta += rnd(350,1100);
+  else if(r.perfScore >= 15) delta += rnd(220,700);
+  else if(r.perfScore >= 12) delta += rnd(120,380);
+  else if(r.perfScore >= 9) delta += rnd(40,150);
+  else if(r.perfScore >= 7) delta += rnd(-120,40);
+  else delta += rnd(-320,-100);
+
+  if(r.wonLeague) delta += rnd(800,2200);
+  if(r.wonIntl) delta += rnd(1400,4800);
+
+  delta += Math.round(r.goals * rnd(6,11));
+  delta += Math.round(r.assists * rnd(5,10));
+
+  delta += (r.clubGoalMet ? rnd(120,420) : rnd(-320,-110));
+
+  if(r.leagueEvent === "RELEGATED") delta += rnd(-1900,-600);
+  if(r.leagueEvent === "PROMOTED") delta += rnd(650,1900);
+
+  if(r.seasonFlavor === "GOLDEN") delta += rnd(120,520);
+  if(r.seasonFlavor === "DRY") delta += rnd(-220,-70);
+
+  if(r.criticalSeason) delta += (r.clubGoalMet ? rnd(60,200) : rnd(-180,-60));
+
+  // zar olayları direkt follower etkisi (summary)
+  delta += r.diceFollowersDelta || 0;
+
+  delta = Math.round(delta * mult);
+
+  const before = Career.followers;
+  Career.followers = clamp(before + delta, 0, 50_000_000);
+  Career.peakFollowers = Math.max(Career.peakFollowers, Career.followers);
+  return Career.followers - before;
+}
+
+const HANDLES = ["@tribunbey","@futbolakli","@xspor","@sahakurtu","@yorumcuabi","@kramponcu","@linccihoca","@baskansesleniyo","@golkolik","@asistci","@taraftarabi","@liganaliz","@transferhaber","@kaptan10","@defans_adam","@bench_boss","@formasavar","@ateshatti"];
+function fakeEng(){
+  const likes = rnd(20, 9800);
+  const rts = Math.round(likes * (0.12 + Math.random()*0.22));
+  return `${fmtFollowers(likes)} beğeni • ${fmtFollowers(rts)} RT`;
+}
+function genTweets(r){
+  const name = Career.name;
+  const club = Career.clubName;
+  const div = (r.seasonDivision===1 ? "D1" : "D2");
+  const ga = r.goals + r.assists;
+
+  const good = [
+    `YA BU NE PERFORMANS 😳 ${name} sahayı yakmış. ${r.goals} gol ${r.assists} asist, ligde kaçıncı sıraya girdiğine bak bir de.`,
+    `${name} bu sezon gerçekten farklıydı. Stats konuşuyor, laf yok.`,
+    `Sessiz sedasız ${ga} G/A yazmış… kimse konuşmuyo 👀 sosyal medya uyuyor mu ne?`,
+    `${club} bu adamı 11'e yazmazsa yazıklar olsun. Hoca ne düşünüyor anlamıyorum.`,
+    `${div} fark etmez, oynayan oynuyo abi. 🔥 Kalite her ligde çıkar.`,
+    `${name} sezonu kapattı, transferler başlasın. Bu oyuncu pazar değerinin üzerinde.`,
+    `${r.goals} gol bu takımda kolay değil, anlıyor musunuz? Sahada tek kişi gibiydi bazen.`,
+    `Sezon başında kim inanırdı bu rakamlara? ${name} herkesi susturdu.`,
+    `İzlemeyi bile unuttuğum maçlarda gol atmış. Tutarlılık bu.`,
+    `${club} taraftarı iyi ki sabırla bekledi. Bu adam artık tam oturdu.`,
+    `Özellikle son 10 maçtaki formu inanılmazdı. Bitirdi insanları. 🔥`,
+    `Tek kelime: dominant. ${name} bu sezonu sahiplendi.`,
+  ];
+  const mid = [
+    `${name} idare etti ama "büyük maç oyuncusu" mu tartışılır. Kritik anlarda kayboldu biraz.`,
+    `Stats var ama oyun var mı? Rakamlar her şeyi anlatmıyor.`,
+    `Ne iyi ne kötü… "eh işte" sezonu. Taraftarı ne mutlu etti ne de kızdırdı.`,
+    `${club} hedef tuttu mu tutmadı mı, bir garip sezon geride kaldı.`,
+    `Daha fazlasını bekleyen vardı ama kimse de hayal kırıklığı yaşamadı diyebiliriz.`,
+    `${name} için "potansiyel var" lafı çıkmaya devam ediyor. Ne zaman patlayacak?`,
+    `Ortalama bir sezon. Şimdi soru şu: bunu kabul mi edecek, yoksa kışı iyi geçirecek mi?`,
+    `Tutarlı ama heyecansız. Tribün ne zaman ayağa kalkacak diye bekliyor.`,
+    `İyi de değil kötü de değil. ${club} için yeterli miydi? Tartışılır.`,
+    `${r.goals} gol ${r.assists} asist. Rakamlar fena değil ama beklentiyi karşılamadı.`,
+  ];
+  const bad = [
+    `Bu perfle kimse kusura bakmasın. ${name} bu sezonu unutmak isteyecek.`,
+    `${name} kendini kaybetti bu sezon. Ne oldu buna böyle?`,
+    `Maç izleyip sinirlenmekten bıktık abi. ${club} taraftarı çileden çıktı.`,
+    `Bunu savunanlar futbolu bırakabilir. Ortada bir şey yok.`,
+    `${club} bu adamla mı hedefe oynayacak? 🤡 Yönetim adım atmalı.`,
+    `${r.goals} gol… ciddi misiniz? Bu formasyonda bu kadar mı olur?`,
+    `Takım savaşırken tribün ona bakıyor, o yok. Tutarsızlığın dibine vurdu.`,
+    `Sakatlanmadı mı? Sağlık durumu mu? Neden bu kadar silik?`,
+    `Maaşını hak etmedi bu sezon, bunu herkes söylüyor ama kimse yazmıyor.`,
+    `${name} için "düşüş mü başladı?" sorusu artık sorulur hale geldi.`,
+    `Savunulacak bir şey bulamıyorum. Kötü sezon, kabul etmeli.`,
+  ];
+  const releg = [
+    `KÜME DÜŞTÜK… hâlâ story atıyolar 😭 vicdanları rahat mı bilmiyorum.`,
+    `${club} düştü. Kim sorumluysa hesap vermeli. Bu tablo kabul edilemez.`,
+    `D2'de "şimdi kasma sezonu" diyolar ya… hadi bakalım. Kolay değil oradan çıkmak. 😅`,
+    `Geçmiş olsun. Bu ligden çıkmak o kadar kolay değil, herkes görecek.`,
+    `${name} de bu bataklığa battı gitti. Transfer mi olur, kalır mı? Zor günler.`,
+    `Küme düşme maçlarında buharlaştı. Tam da lazım olduğu anda yoktu.`,
+    `Şimdi D2 yolculuğu başlıyor. Moral çöktü, takım dağılabilir.`,
+    `Taraftarı bu sonu hak etmedi. Yönetim yüz yüze gelsin bir de.`,
+  ];
+  const promo = [
+    `ÇIKTIK LANNN! ${club} geri geldi 😤 inanmayanlar nerede şimdi?`,
+    `Üst lige yükseldik… şimdi asıl film başlıyor. D1'e hoşgeldin!`,
+    `${name} bu çıkışın başrolü mü? bence evet. Rakamlar da onu gösteriyor.`,
+    `Sene boyu taşın altına elini koyanlara helal olsun. Emek boşa gitmedi.`,
+    `D2'yi geride bıraktık! Şimdi ${club} için yeni bir dönem açılıyor.`,
+    `${name} bu sezonu omuzladı. Çıkışın mimarı denir buna.`,
+    `Üst ligte de aynı karakteri görmek istiyoruz. Devam et. 💪`,
+  ];
+  const trophy = [
+    `ŞAMPİYONUZ! 🏆 ${club} tarihe geçti bu sezon.`,
+    `Kupa geldi eve! ${name} şampiyon oldu, inanamıyorum hâlâ.`,
+    `Bu takım bu kupayı hak etti. Başından sonuna kadar dominant.`,
+    `${name} şampiyonlukla taçlandı. Kariyer böyle yazılır.`,
+    `Kupayı kaldıranlar arasında ${name} de vardı. Gurur verici. 🏆`,
+  ];
+  const golden = [
+    `Golden sezon bu! ${name} için yılın oyuncusu konuşması başlasın.`,
+    `Bu forma bir daha böyle parlayacak mı? Tarihi sezon.`,
+    `Tüm sezon boyunca zirvede kaldı. Form denen şey bu işte.`,
+  ];
+  const dry = [
+    `Kötü bir sezon geçirdi ${name}. "Paslanma dönemi" mi ne derler buna.`,
+    `Kuru sezon. Gol yok, asist yok, haber yok. Yok yok.`,
+    `Herkes daha fazlasını bekliyordu. Hayal kırıklığı kaçınılmaz.`,
+  ];
+  const dice = [
+    `Sezon içi kriz yaşandı ama ${name} ayakta kaldı. Karakter bu.`,
+    `Şans mı? Emek mi? Bu sezon ikisi de vardı biraz.`,
+    `Baskı altında zar atıp çıkmak kolay değil. Psikolojik sağlamlık.`,
+    `Sezon boyunca tuhaf olaylar yaşandı. ${name} nasıl çıktı bunun içinden?`,
+  ];
+  const legendary = [
+    `Bu sezon "legendary growth" gördüm ben… gözlerimle. 😤`,
+    `${name} için "kilit açıldı" diyorlar. 99 yolu mu bu? 👀`,
+    `Seviye atladı, bu netleşti artık. Başka bir ${name} var sahada.`,
+  ];
+
+  let poolA = [], poolB = [];
+  if(r.leagueEvent==="RELEGATED") { poolA = releg; poolB = bad; }
+  else if(r.leagueEvent==="PROMOTED") { poolA = promo; poolB = good; }
+  else if(r.wonLeague) { poolA = trophy; poolB = good; }
+  else if(r.seasonFlavor==="GOLDEN") { poolA = golden; poolB = good; }
+  else if(r.seasonFlavor==="DRY") { poolA = dry; poolB = bad; }
+  else if(r.perfScore >= 15) { poolA = good; poolB = mid; }
+  else if(r.perfScore >= 9) { poolA = mid; poolB = good; }
+  else { poolA = bad; poolB = mid; }
+
+  const out = [];
+  const count = rnd(5, 7);
+
+  if(r.diceCount && r.diceCount > 0 && Math.random() < 0.6) out.push(`${pick(HANDLES)}: ${pick(dice)}\n${fakeEng()}`);
+  if(r.legendaryStory && Math.random() < 0.75) out.push(`${pick(HANDLES)}: ${pick(legendary)}\n${fakeEng()}`);
+
+  const usedTexts = new Set();
+  for(let i=0; i<count; i++){
+    const h = pick(HANDLES);
+    let text, tries=0;
+    do { text = Math.random()<0.65 ? pick(poolA) : pick(poolB); tries++; } while(usedTexts.has(text) && tries<8);
+    usedTexts.add(text);
+    out.push(`${h}: ${text}\n${fakeEng()}`);
+  }
+  if(Math.random() < 0.3){
+    out.splice(rnd(0, out.length-1), 0, `${pick(HANDLES)}: Takipçi sayısı ${fmtFollowers(Career.followers)} olmuş. Hype artıyor mu? 👀\n${fakeEng()}`);
+  }
+  return out.join("\n\n");
+}
+
+function genSeasonNarrative(r){
+  const name = Career.name;
+  const club = Career.clubName;
+  const age = Career.age;
+  const div = r.seasonDivision===1 ? "birinci lig" : "ikinci lig";
+  const ga = r.goals + r.assists;
+
+  const lines = [];
+
+  // Giriş cümlesi — sezon tipi + breakout/slump
+  if(r.leagueEvent==="RELEGATED"){
+    lines.push(`${club} için acı bir sezon sonu: küme düşüş. ${name}, ${age} yaşında ilk kez ${div === "birinci lig" ? "ikinci" : "birinci"} ligde mücadele edecek.`);
+  } else if(r.leagueEvent==="PROMOTED"){
+    lines.push(`Terfi! ${club}, ${div === "birinci lig" ? "birinci" : "ikinci"} lig biletini aldı. ${name} bu çıkışın kilit oyuncularından biri oldu.`);
+  } else if(r.wonLeague){
+    lines.push(`Şampiyonluk! ${club} ligi zirvede kapattı. ${name} bu kupayı kariyerinin önemli taşlarından biri olarak hatırlayacak.`);
+  } else if(r.seasonFlavor==="GOLDEN"){
+    lines.push(`${name} için parlak bir sezon geride kaldı. ${age} yaşında ${r.goals} gol ve ${r.assists} asist — bu rakamlar kolay unutulmaz.`);
+  } else if(r.breakout==="BREAKOUT"){
+    lines.push(`Patlama sezonu! ${name} bu yıl gerçek potansiyelini sahaya döktü. Beklentilerin üzerine çıktı.`);
+  } else if(r.breakout==="SLUMP"){
+    lines.push(`Zor bir sezon geçirdi ${name}. Formunu bir türlü tutturamadı, beklentilerin altında kaldı.`);
+  } else if(r.seasonFlavor==="DRY"){
+    lines.push(`Kuru bir sezon. ${name} ${r.matches} maçta sahneye çıktı ama istenen etkiyi yaratamadı.`);
+  } else if(r.perfScore >= 15){
+    lines.push(`${name} bu sezonu güçlü bir performansla kapattı. ${ga} gol ve asist katkısıyla takımın lokomotiflerinden biri oldu.`);
+  } else if(r.perfScore >= 9){
+    lines.push(`Tutarlı ama sıradan bir sezon. ${name}, ${r.matches} maçta sahneye çıktı; ne büyük bir iz bıraktı ne de taraftarı hayal kırıklığına uğrattı.`);
+  } else {
+    lines.push(`Zor bir sezon geride kaldı. ${name} ${r.matches} maçta beklentilerin uzağında kaldı. ${age} yaşındaki bu oyuncu için ciddi bir sınav dönemiydi.`);
+  }
+
+  // Hedef satırı
+  if(r.clubGoalMet && r.personalGoalMet){
+    lines.push(`Hem kulüp hem kişisel hedef tuttu — bu sezon iki taraftan da tam puan.`);
+  } else if(r.clubGoalMet && !r.personalGoalMet){
+    lines.push(`Kulüp hedefine ulaştı ama kişisel rakamlar biraz geride kaldı.`);
+  } else if(!r.clubGoalMet && r.personalGoalMet){
+    lines.push(`Kişisel hedefini tutturdu, ancak takım olarak hedef ıskalandı.`);
+  } else if(!r.clubGoalMet && !r.personalGoalMet && r.perfScore < 9){
+    lines.push(`Ne kulüp ne kişisel hedef. Bu sezon iki cephede de geride kalındı.`);
+  }
+
+  // Kritik sezon notu
+  if(r.criticalSeason){
+    if(r.clubGoalMet || r.personalGoalMet){
+      lines.push(`Baskı altında karar verilenlerden biri oldu: kritik bir sezondu ve ${name} ayakta kaldı.`);
+    } else {
+      lines.push(`Kritik bir sezondu ama beklenen cevap gelmedi. Önümüzdeki dönem daha da zorlu olabilir.`);
+    }
+  }
+
+  // Zar olayı varsa kısa not
+  if(r.diceCount && r.diceCount > 0){
+    lines.push(`Sezon boyunca ${r.diceCount} beklenmedik olay yaşandı — sahası dışında da zorlu bir dönemdi.`);
+  }
+
+  // Legendary
+  if(r.legendaryStory){
+    lines.push(`Ve bu sezon bir şeyler açıldı sanki. Çevresindekiler "artık başka biri" diyor ${name} için. 99 yolu uzun ama kapı aralandı.`);
+  }
+
+  return lines.join(" ");
+}
+
+/* =========================
+   Season Flavor / Breakout
+========================= */
+function rollSeasonFlavor(){
+  const roll = rnd(1,100);
+  if(roll <= 13) return "GOLDEN";
+  if(roll <= 82) return "NORMAL";
+  return "DRY";
+}
+function rollBreakoutSlump(){
+  const roll = rnd(1,100);
+  if(roll <= 7) return "BREAKOUT";
+  if(roll <= 13) return "SLUMP";
+  return "NONE";
+}
+
+/* =========================
+   Dice Events (rating/rep/followers)
+   - max 5
+   - not immediately
+   - not back-to-back (we show loader between)
+========================= */
+const DICE_EVENTS = [
+  { title:"🏥 Sakatlık Gölgesi", desc:"Antrenmanda bir terslik. Doktor 'temkinli ol' dedi." },
+  { title:"🔥 Form Patlaması", desc:"Bir anda her şey akmaya başladı. Tribün de fark etti." },
+  { title:"🧨 Taraftar Baskısı", desc:"Sosyal medya kaynıyor. Bir kısım seni yiyor." },
+  { title:"🕵️ Transfer Dedikodusu", desc:"Menajer söylentileri var. Kulüp de tedirgin." },
+  { title:"🌙 Gece Hayatı", desc:"Bir fotoğraf düştü. Doğru mu değil mi karışık." },
+  { title:"🤝 Hoca Güveni", desc:"Hoca 'bu sene senin sene' modunda." },
+];
+
+function diceOutcomeText(roll){
+  if(roll<=2) return `🎲 Zar: ${roll}\nKötü çıktı. Ceza yedin.`;
+  if(roll<=4) return `🎲 Zar: ${roll}\nNötr. Etki yok.`;
+  return `🎲 Zar: ${roll}\nİyi çıktı. Bonus aldın.`;
+}
+
+function applyDiceOutcomeToSeason(acc, roll, ev){
+  // acc: {ratingDelta, repDelta, followersDelta, matchesPenalty, formMult, didRoll6}
+  // v8: sakatlık kartı geldiyse flat -3 rating (sezon başına 1 kez)
+  if(ev && typeof ev.title === "string" && ev.title.includes("Sakatlık")){
+    if(!acc._injApplied){
+      acc.ratingDelta -= 3;
+      acc._injApplied = true;
+    }
+  }
+  if(roll<=2){
+    acc.ratingDelta -= rnd(1,2);
+    acc.repDelta -= rnd(1,3);
+    acc.followersDelta -= rnd(80,260);
+    if(rnd(1,100)<=55) acc.matchesPenalty += rnd(1,3);
+    acc.formMult -= 0.04;
+  } else if(roll<=4){
+    // nothing
+  } else {
+    acc.ratingDelta += 1;
+    acc.repDelta += rnd(1,3);
+    acc.followersDelta += rnd(120,380);
+    acc.formMult += 0.04;
+    if(roll===6) acc.didRoll6 = true;
+  }
+}
+
+function runDiceEventsFlow(maxEvents, done){
+  const total = (maxEvents<=0) ? 0 : Math.min(rnd(1, maxEvents), DICE_EVENTS.length);
+  if(total===0){ done({count:0, sum:"—", acc:null}); return; }
+
+  // sezon başlar başlamaz olay gelmesin: önce küçük loader
+  showLoader("Sezon simüle ediliyor…", "Lig hesaplanıyor…");
+  setTimeout(()=>{
+    hideLoader();
+
+    const picked = [];
+    while(picked.length < total){
+      const e = pick(DICE_EVENTS);
+      if(!picked.includes(e)) picked.push(e);
+    }
+
+    const acc = { ratingDelta:0, repDelta:0, followersDelta:0, matchesPenalty:0, formMult:1.0, didRoll6:false };
+    const rolls = [];
+
+    const step = (i)=>{
+      if(i>=picked.length){
+        const sum = rolls.map((r,idx)=>`#${idx+1} ${r.title} → ${r.roll}`).join(" | ");
+        done({count:picked.length, sum, acc});
+        return;
+      }
+
+      const ev = picked[i];
+      openModal({
+        title: ev.title,
+        desc: ev.desc,
+        stepIndex: i,
+        stepsTotal: picked.length,
+        foot: "Sezon İçi Olay (Zar)",
+        revealLabel: "ZAR AT 🎲",
+        nextLabel: "DEVAM",
+        initialOutcome: "Zar at… (1–6)",
+        revealFn: ()=>{
+          const roll = rnd(1,6);
+          rolls.push({title: ev.title, roll});
+          applyDiceOutcomeToSeason(acc, roll, ev);
+          return diceOutcomeText(roll);
+        },
+        nextFn: ()=>{
+          // olaylar ard arda gelmesin: araya loader koy
+          showLoader("Devam ediliyor…", "Sezon akıyor…");
+          setTimeout(()=>{
+            hideLoader();
+            step(i+1);
+          }, 650);
+        }
+      });
+    };
+
+    step(0);
+  }, 900);
+}
+
+/* =========================
+   Transfer logic (less offers + overseas enabled)
+========================= */
+function getClubById(id){ return CLUBS.find(c=>c.id===id) || null; }
+function getClubByName(country, name){
+  return CLUBS.find(c=>c.country===country && c.name===name) || null;
+}
+function refreshCareerClubFromClubList(){
+  const c = getClubById(Career.clubId);
+  if(!c) return;
+  Career.clubName = c.name;
+  Career.league = c.league;
+  Career.division = c.division;
+  Career.clubStrength = c.strength;
+  // v8 fix: transfer sonrası doğru ülke/lig tablosu
+  Career.nation = c.country;
+}
+
+function eliteGate(strength){
+  // 90+ çok zor: erken kariyerde elite akmasın
+  if(Career.season <= 3 && strength >= 88) return false;
+  return true;
+}
+
+function offerBand(){
+  const widen = Math.floor(Career.rep / 22);
+  let minS = clamp(Career.rating - 14 - widen, 55, 92);
+  let maxS = clamp(Career.rating + 8 + widen, 60, 92);
+  if(Career.rep < 20) maxS = Math.min(maxS, Career.rating + 8);
+  if(Career.season <= 3) maxS = Math.min(maxS, 86);
+  return {minS, maxS};
+}
+
+function dynOfferCount(){
+  // ✅ çok teklif gelmesin: max 3 transfer
+  const contract = Career.contractYearsLeft;
+  if(!Career.lastResult){
+    if(contract <= 1) return rnd(1,2);
+    return rnd(0,2);
+  }
+  const r = Career.lastResult;
+  const perfIndex = (r.goals*2 + r.assists*1.2) / Math.max(1, r.matches);
+
+  let base;
+  if(perfIndex < 0.55) base = rnd(0,1);
+  else if(perfIndex < 1.05) base = rnd(1,2);
+  else base = rnd(1,3);
+
+  if(contract >= 2) base = Math.max(0, base - 1);
+  if(contract === 0) base = Math.min(3, base + 1);
+
+  // düşük rep'te kıs
+  if(Career.rep < 8) base = Math.min(base, 1);
+
+  return clamp(base, 0, 3);
+}
+
+function estimateOfferFeeM(buyerStrength){
+  if(Career.contractYearsLeft === 0) return 0;
+  let mult = 0.85 + (buyerStrength - Career.clubStrength) / 110;
+  mult = clamp(mult, 0.70, 1.25);
+  mult += clamp(Career.rep / 220, 0, 0.30);
+  mult += rnd(-8, 10)/100;
+  if(Career.contractYearsLeft >= 2) mult += 0.14;
+  if(Career.contractYearsLeft >= 3) mult += 0.10;
+  const fee = Career.valueM * mult;
+  return Math.round(fee*10)/10;
+}
+function clubDecisionOnOffer(offeredFeeM){
+  if(Career.contractYearsLeft === 0) return {status:"ACCEPTED", counterFeeM: 0};
+
+  let minMult = 1.15 + (Career.contractYearsLeft * 0.22);
+  if(Career.contractYearsLeft === 1) minMult = 1.05;
+
+  const happy = Career.clubHappiness;
+  const need = Career.clubNeedMoney;
+  minMult += (happy >= 70 ? 0.10 : 0);
+  minMult -= (need >= 70 ? 0.08 : 0);
+
+  const minFee = Math.round((Career.valueM * minMult)*10)/10;
+
+  if(offeredFeeM >= minFee) return {status:"ACCEPTED", counterFeeM: 0, minFee};
+
+  const counterLikely = (need >= 60) || (happy <= 40) || (Career.contractYearsLeft === 1);
+  if(counterLikely){
+    const counter = Math.round((minFee * (1.05 + rnd(0,22)/100))*10)/10;
+    return {status:"COUNTERED", counterFeeM: counter, minFee};
+  }
+  return {status:"REJECTED", counterFeeM: 0, minFee};
+}
+function counterAcceptChance(offer){
+  let chance = 58;
+  chance += clamp(Math.round(Career.rep * 0.22), 0, 12);
+  const jump = Math.max(0, (offer.counterFeeM - offer.feeOfferM));
+  chance -= clamp(Math.round(jump * 2), 0, 12);
+  chance += clamp(Math.round((offer.strength - Career.clubStrength) * 0.25), 0, 8);
+  return clamp(chance, 35, 78);
+}
+
+/* =========================
+   Tryout
+========================= */
+const TRYOUT_CARDS = [
+  {
+    title:"🏃‍♂️ Fizik Testi",
+    desc:"Koşu, dayanıklılık, tempo. Hoca 'burada ayakta kalacaksın' bakışı atıyor.",
+    outcomes:[
+      {text:"✅ Testleri yaktın: başlangıç rating +1, followers +60", mod:{rating:+1, fol:+60, roleBias:+1}},
+      {text:"➖ Ortalama: Etki yok", mod:{rating:0, fol:0, roleBias:0}},
+      {text:"❌ Tempoya düştün: rating -1, followers -30", mod:{rating:-1, fol:-30, roleBias:-1}},
+    ]
+  },
+  {
+    title:"⚽ Teknik Antrenman",
+    desc:"Dar alanda pas, şut, karar verme. Kameralar da var…",
+    outcomes:[
+      {text:"✅ Parladın: rating +1, rep +2, followers +120", mod:{rating:+1, rep:+2, fol:+120, roleBias:+1}},
+      {text:"➖ İdare: rep +1, followers +30", mod:{rating:0, rep:+1, fol:+30, roleBias:0}},
+      {text:"❌ Silik kaldın: rep -1, followers -40", mod:{rating:0, rep:-1, fol:-40, roleBias:-1}},
+    ]
+  },
+  {
+    title:"🧠 Mental & İzlenim",
+    desc:"Hoca konuştu: 'Bu iş kafada biter.' Senin duruşun önemli.",
+    outcomes:[
+      {text:"✅ Özgüven iyi: rep +2, sözleşme +1 yıl ihtimali, followers +80", mod:{rep:+2, contract:+1, fol:+80, roleBias:+1}},
+      {text:"➖ Normal: standard", mod:{rep:0, contract:0, fol:0, roleBias:0}},
+      {text:"❌ Heyecan bastı: rep -2, followers -60", mod:{rep:-2, contract:0, fol:-60, roleBias:-1}},
+    ]
+  },
+];
+
+
+const TRYOUT_LOADING_LINES = [
+  ["Rapor hazırlanıyor…","Kamera kayıtları inceleniyor."],
+  ["Teknik rapor analiz ediliyor…","Hoca not alıyor."],
+  ["Fizik verileri işleniyor…","Nabız grafiği çıkıyor."],
+  ["Menajer aranıyor…","'Bu çocukta ışık var' dendi."],
+];
+
+function showTryoutLoading(next){
+  const [t,s] = pick(TRYOUT_LOADING_LINES);
+  showLoader(t, s);
+  setTimeout(()=>{ hideLoader(); next(); }, rnd(1200,1900));
+}
+
+let tryout = null;
+
+/* =========================
+   Screens
+========================= */
+const pillState = document.getElementById("pillState");
+const screenMain = document.getElementById("screenMain");
+const screenCustom = document.getElementById("screenCustom");
+const screenLegend = document.getElementById("screenLegend");
+const screenGame = document.getElementById("screenGame");
+const screenResults = document.getElementById("screenResults");
+const screenSummary = document.getElementById("screenSummary");
+
+function show(which){
+  [screenMain,screenCustom,screenLegend,screenGame,screenResults,screenSummary].forEach(s=>s.classList.add("hidden"));
+  which.classList.remove("hidden");
+}
+
+/* =========================
+   Save / Load
+========================= */
+const SAVE_KEY = "csim_career_v1";
+
+function saveGame(){
+  if(!Career.mode) return;
+  try{
+    const data = {
+      career: JSON.parse(JSON.stringify(Career)),
+      clubs: CLUBS.map(c=>({id:c.id, division:c.division}))
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+  } catch(_){}
+}
+
+function loadGame(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return false;
+    const data = JSON.parse(raw);
+    if(!data.career || !data.career.mode) return false;
+    Object.assign(Career, data.career);
+    if(data.clubs) data.clubs.forEach(s=>{ const c=CLUBS.find(x=>x.id===s.id); if(c) c.division=s.division; });
+    return true;
+  } catch(_){ return false; }
+}
+
+function clearSave(){ localStorage.removeItem(SAVE_KEY); }
+
+/* =========================
+   Leaderboard
+========================= */
+const LB_KEY  = "csim_lb_v1";
+const LB_FNAME = ["Ahmet","Mehmet","Ali","Emre","Burak","Can","Mert","Arda","Hakan","Sercan","Kemal","Onur","Furkan","Berk","Tolga","Carlos","Luis","Marco","Diego","Sergio","Luca","Antoine","Erling","Robert","Harry","Marcus","Phil","Mohamed","Virgil","Federico"];
+const LB_LNAME = ["Yılmaz","Kaya","Demir","Şahin","Çelik","Arslan","Doğan","Öztürk","Aydın","Kurt","Silva","Santos","Costa","García","Müller","Schmidt","Fernandez","Rodriguez","Martinez","Kane","Smith","Jones","Williams","Brown","Taylor","Mané","Salah","van Dijk","Chiesa","Bellingham"];
+
+function genLbEntry(score){
+  const pos  = Math.random()<0.6?"ST":"CM";
+  const nat  = pick(NATIONS);
+  const seas = rnd(8,20);
+  return {
+    name:   pick(LB_FNAME)+" "+pick(LB_LNAME),
+    nation: nat, pos,
+    score,
+    goals:   pos==="ST"?rnd(60,210):rnd(20,90),
+    assists: pos==="CM"?rnd(60,160):rnd(20,90),
+    leagueTitles: rnd(0,5),
+    seasons: seas,
+    peakRating: rnd(74,94),
+    isUser: false,
+    date: null
+  };
+}
+
+function generateDefaultLb(){
+  const scores = [
+    1487,1461,1438,1412,1394,1378,1351,1329,1308,1284,
+    1261,1243,1219,1198,1177,1154,1132,1108,1089,1063,
+    1041,1019,994,971,948
+  ];
+  return scores.map(s=>genLbEntry(s));
+}
+
+function loadLb(){
+  try{
+    const raw = localStorage.getItem(LB_KEY);
+    if(raw){ const d=JSON.parse(raw); if(Array.isArray(d)&&d.length) return d; }
+  } catch(_){}
+  const def = generateDefaultLb();
+  saveLb(def);
+  return def;
+}
+
+function saveLb(lb){ try{ localStorage.setItem(LB_KEY, JSON.stringify(lb)); }catch(_){} }
+
+function addCareerToLb(){
+  const entry = {
+    name: Career.name==="-"?"Anonim":Career.name,
+    nation: Career.nation, pos: Career.pos,
+    score: Career.score,
+    goals: Career.goals,
+    assists: Career.assists,
+    leagueTitles: Career.leagueTitles,
+    seasons: Career.season-1,
+    peakRating: Career.peakRating || Career.rating,
+    isUser: true,
+    date: new Date().toLocaleDateString("tr-TR")
+  };
+  const lb = loadLb();
+  lb.push(entry);
+  lb.sort((a,b)=>b.score-a.score);
+  saveLb(lb.slice(0,100));
+}
+
+function renderLb(){
+  const lb   = loadLb();
+  const body = document.getElementById("lbBody");
+  if(!body) return;
+  const top = lb.slice(0,15);
+  body.innerHTML = top.map((e,i)=>{
+    const rankCls = i===0?"r1":i===1?"r2":i===2?"r3":"";
+    const meCls   = e.isUser?"lb-me":"";
+    const medal   = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+    const nameDisp = e.name.length>16 ? e.name.slice(0,15)+"…" : e.name;
+    return `<tr class="${meCls}">
+      <td class="lb-rank ${rankCls}">${medal||i+1}</td>
+      <td class="lb-name">${nameDisp}${e.isUser?" <span style='color:var(--accent);font-size:10px'>▶</span>":""}</td>
+      <td>${e.pos}</td>
+      <td class="lb-score">${e.score}</td>
+      <td>${e.goals}</td>
+      <td>${e.seasons}</td>
+    </tr>`;
+  }).join("");
+}
+
+function checkContinue(){
+  const raw = localStorage.getItem(SAVE_KEY);
+  if(!raw) return;
+  try{
+    const data = JSON.parse(raw);
+    if(!data.career || !data.career.mode || data.career.retired) return;
+    const c = data.career;
+    const wrap = document.getElementById("continueWrap");
+    const info = document.getElementById("continueInfo");
+    wrap.classList.remove("hidden");
+    info.textContent = `${c.name} • ${c.nation} • ${c.pos} • Sezon ${c.season} • Rating ${c.rating}`;
+  } catch(_){}
+}
+
+function resetCareer(){
+  Object.assign(Career, {
+    mode:null, name:"-", nation:"-", pos:"ST", age:16, season:1,
+    clubId:null, clubName:"-", league:"-", division:2, clubStrength:65,
+    role:"Starter", rating:60, rep:0,
+    valueM:2.0, peakValueM:2.0, peakRating:60, wageK:20, cashM:0.0, contractYearsLeft:1,
+    followers:110, peakFollowers:110,
+    clubHappiness:55, clubNeedMoney:50,
+    clubGoal:null, personalGoal:null,
+    goals:0, assists:0, leagueTitles:0, intlTitles:0, score:0,
+    clubHistory:[], bestSeason:null,
+    lastOffers:[], selectedOfferIndex:-1, lastResult:null,
+    justRelegated:false, justPromoted:false, seasonsAtCurrentClub:0,
+    memoryFlags:{cameBackUp:false, wonTrophyAfter30:false, clubLegend:false, promotedCaptain:false, legendaryUnlocked:false, legendaryStory:false},
+    retired:false,
+    earnedAchievements:[]
+  });
+  const sp = document.getElementById("shPlayer");
+  if(sp) sp.classList.remove("on");
+}
+
+/* =========================
+   Build selectors / legends
+========================= */
+(function initSelectors(){
+  const selNation = document.getElementById("selNation");
+  NATIONS.forEach(n=>{
+    const opt=document.createElement("option"); opt.value=n; opt.textContent=n;
+    selNation.appendChild(opt);
+  });
+
+  const list = document.getElementById("legendList");
+  list.innerHTML = "";
+  LEGENDS.forEach((l, idx)=>{
+    const btn = document.createElement("button");
+    btn.className="btn secondary full";
+    btn.style.marginBottom="8px";
+    btn.textContent = `${l.name} • ${l.nation} • ${l.pos}`;
+    btn.onclick = ()=>selectLegend(idx);
+    list.appendChild(btn);
+  });
+})();
+
+let chosenLegendIndex = -1;
+function selectLegend(idx){
+  chosenLegendIndex = idx;
+  const l = LEGENDS[idx];
+  const seed = getClubByName(l.nation, l.seedClubName);
+  document.getElementById("legendName").textContent = l.name;
+  document.getElementById("legendMeta").textContent = `${l.nation} • ${l.pos} • Start age ${l.startAge}`;
+  document.getElementById("legendKvs").innerHTML = `
+    <div class="kv"><div class="k">Seed Club</div><div class="v">${seed ? seed.name : "-"}</div></div>
+    <div class="kv"><div class="k">Start Rating</div><div class="v">${l.rating}</div></div>
+    <div class="kv"><div class="k">Start Rep</div><div class="v">${l.rep}</div></div>
+    <div class="kv"><div class="k">Not</div><div class="v">Kurgusal</div></div>
+  `;
+  document.getElementById("btnStartLegend").disabled = false;
+}
+
+/* =========================
+   Buttons - navigation
+========================= */
+document.getElementById("btnGoCustom").onclick = ()=>{ show(screenCustom); pillState.textContent="Karakter"; };
+document.getElementById("btnBackFromCustom").onclick = ()=>{ show(screenMain); pillState.textContent="Menü"; };
+
+document.getElementById("btnGoLegend").onclick = ()=>{ show(screenLegend); pillState.textContent="Legend"; };
+document.getElementById("btnBackFromLegend").onclick = ()=>{ show(screenMain); pillState.textContent="Menü"; };
+
+document.getElementById("btnReset").onclick = ()=>{ clearSave(); resetCareer(); renderLb(); show(screenMain); pillState.textContent="Menü"; };
+document.getElementById("btnReset2").onclick = ()=>{ clearSave(); resetCareer(); renderLb(); show(screenMain); pillState.textContent="Menü"; };
+
+document.getElementById("btnContinue").onclick = ()=>{
+  if(loadGame()){
+    refreshCareerClubFromClubList();
+    makeOffers();
+    show(screenGame); pillState.textContent="Sezon Merkezi";
+    switchTab("tabStats"); renderHub();
+  }
+};
+
+document.getElementById("btnSummary").onclick = ()=>{
+  renderSummary();
+  show(screenSummary);
+  pillState.textContent="Özet";
+};
+document.getElementById("btnBackToHub").onclick = ()=>{
+  show(screenGame);
+  pillState.textContent="Sezon Merkezi";
+  switchTab('tabStats');
+  renderHub._skipDeltaClear = true;
+  renderHub();
+};
+
+
+function openLeagueTableWindow(r){
+  if(!r || !r.leagueTableRows) return;
+
+  const rows = r.leagueTableRows;
+  const champId = r.leagueChampionId;
+  const rel = new Set(r.leagueRelegatedIds || []);
+  const myId = Career.clubId;
+
+  const title = `${r.leagueName || Career.league} • Sezon ${Career.season-1} • ${r.division===1?"D1":"D2"}`;
+  const htmlRows = rows.map((rw, i)=>{
+    const isChamp = rw.id===champId;
+    const isRel = rel.has(rw.id);
+    const isMe = rw.id===myId;
+    const icons = `${isChamp ? "🏆" : ""}${isRel ? " ⬇️" : ""}${isMe ? " • SEN" : ""}`;
+    return `
+      <tr>
+        <td><b>${i+1}</b></td>
+        <td>${rw.name}${icons ? " <span class=\"muted\">"+icons+"</span>" : ""}</td>
+        <td class="mono">${rw.points}</td>
+        <td class="mono">${rw.strength}</td>
+      </tr>
+    `;
+  }).join("");
+
+  const bodyHTML = `
+    <div class="card">
+      <div class="muted" style="margin-bottom:8px">18 takım • Şampiyon: 🏆 • Düşen: ⬇️</div>
+      <div style="overflow:auto; max-height: 55vh; border:1px solid rgba(255,255,255,.10); border-radius:12px">
+        <table style="width:100%; border-collapse:collapse">
+          <thead>
+            <tr style="position:sticky; top:0; background:rgba(10,14,28,.92)">
+              <th style="text-align:left; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.10)">#</th>
+              <th style="text-align:left; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.10)">Takım</th>
+              <th style="text-align:left; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.10)">Puan</th>
+              <th style="text-align:left; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.10)">Güç</th>
+            </tr>
+          </thead>
+          <tbody>${htmlRows}</tbody>
+        </table>
+      </div>
+      <div class="foot">Not: Tablo "son sezon oynadığın lig" için üretilir. Transfer olsan bile doğru ligi görürsün.</div>
+    </div>
+  `;
+
+  openModal({
+    title: "📊 Lig Tablosu",
+    desc: title,
+    bodyHTML,
+    nextLabel: "KAPAT",
+    foot: ""
+  });
+}
+
+
+document.getElementById("btnLeagueTable").onclick = ()=>{
+  openLeagueTableWindow(Career.lastResult);
+};
+
+/* =========================
+   Start flows
+========================= */
+document.getElementById("btnStartCustom").onclick = ()=>{
+  resetCareer();
+  Career.mode = "CUSTOM";
+  Career.name = (document.getElementById("inpName").value || "Rookie").trim();
+  Career.pos = document.getElementById("selPos").value;
+  Career.nation = document.getElementById("selNation").value;
+  Career.age = 16;
+  Career.season = 1;
+
+  // first club: D2 mid
+  const pool = getCountryTeams(Career.nation, 2).sort((a,b)=>b.strength-a.strength);
+  const pickIdx = clamp(rnd(6, 14), 0, pool.length-1);
+  const club = pool[pickIdx];
+  Career.clubId = club.id;
+  refreshCareerClubFromClubList();
+
+  // v8: start sırasında adaptasyon yok
+  Career._adaptCarrySeasons = 0;
+  Career._adaptThisSeason = false;
+  Career.rating = 58 + rnd(-2,2);
+  Career.rep = 0;
+  Career.valueM = 1.2;
+  Career.peakValueM = Career.valueM;
+  Career.wageK = 18;
+  Career.cashM = 0;
+  Career.contractYearsLeft = 1;
+  Career.followers = rnd(100,140);
+  Career.peakFollowers = Career.followers;
+
+  startTryoutSequence();
+};
+
+document.getElementById("btnStartLegend").onclick = ()=>{
+  resetCareer();
+  const l = LEGENDS[chosenLegendIndex];
+  const seed = getClubByName(l.nation, l.seedClubName);
+
+  Career.mode = "LEGEND";
+  Career.name = l.name;
+  Career.pos = l.pos;
+  Career.nation = l.nation;
+  Career.age = l.startAge;
+  Career.season = 1;
+
+  Career.clubId = seed ? seed.id : getCountryTeams(l.nation,1)[0].id;
+  refreshCareerClubFromClubList();
+
+  Career.rating = l.rating;
+  Career.rep = l.rep;
+  Career.valueM = 4.5;
+  Career.peakValueM = Career.valueM;
+  Career.wageK = 35;
+  Career.cashM = 0;
+  Career.contractYearsLeft = 2;
+  Career.followers = rnd(200,620);
+  Career.peakFollowers = Career.followers;
+
+  startTryoutSequence();
+};
+
+/* =========================
+   Tryout sequence
+========================= */
+function startTryoutSequence(){
+  tryout = { step:0, roleBias:0 };
+  pillState.textContent="Tryout";
+  showTryoutLoading(()=>doTryoutStep());
+}
+function doTryoutStep(){
+  const card = TRYOUT_CARDS[tryout.step];
+  openModal({
+    title: card.title,
+    desc: card.desc,
+    stepIndex: tryout.step,
+    stepsTotal: TRYOUT_CARDS.length,
+    foot: "Deneme Kampı (zorunlu)",
+    revealFn: ()=>{
+      const chosen = pick(card.outcomes);
+      if(chosen.mod.rating) Career.rating = clamp(Career.rating + chosen.mod.rating, 40, 99);
+      if(chosen.mod.rep) Career.rep = clamp(Career.rep + chosen.mod.rep, 0, 100);
+      if(chosen.mod.fol) Career.followers = clamp(Career.followers + chosen.mod.fol, 0, 50_000_000);
+      Career.peakFollowers = Math.max(Career.peakFollowers, Career.followers);
+      if(chosen.mod.contract){
+        if(rnd(1,100) <= 55) Career.contractYearsLeft = clamp(Career.contractYearsLeft + chosen.mod.contract, 1, 3);
+      }
+      if(chosen.mod.roleBias) tryout.roleBias += chosen.mod.roleBias;
+      return chosen.text;
+    },
+    nextFn: ()=>{
+      tryout.step++;
+      if(tryout.step < TRYOUT_CARDS.length){
+        showTryoutLoading(()=>doTryoutStep());
+      } else {
+        if(tryout.roleBias >= 2){
+          Career.wageK += 4;
+          Career.valueM = Math.round((Career.valueM + 0.6)*10)/10;
+        } else if(tryout.roleBias <= -2){
+          Career.wageK = Math.max(10, Career.wageK - 2);
+          Career.valueM = Math.max(0.6, Math.round((Career.valueM - 0.3)*10)/10);
+        }
+        Career.peakValueM = Math.max(Career.peakValueM, Career.valueM);
+
+        Career.clubGoal = clubGoalFromStrength(Career.clubStrength);
+        Career.personalGoal = personalGoalFor(Career.pos, Career.clubStrength);
+
+        show(screenGame);
+        pillState.textContent="Sezon Merkezi";
+        makeOffers();
+        renderHub();
+      }
+    }
+  });
+}
+
+/* =========================
+   Offers
+========================= */
+function statusBadge(status){
+  if(status==="ACCEPTED") return `<span class="tag good">ACCEPTED</span>`;
+  if(status==="COUNTERED") return `<span class="tag warn">COUNTERED</span>`;
+  return `<span class="tag bad">REJECTED</span>`;
+}
+
+function makeOffers(){
+  refreshCareerClubFromClubList();
+  Career.clubNeedMoney = clamp(Career.clubNeedMoney + rnd(-10,10), 0, 100);
+
+  const offers = [];
+  const roleObj = computeRole(Career.clubStrength, Career.rating);
+
+  const stayClubGoal = (Career.justRelegated && Career.division===2)
+    ? {label:"Üst Lige Çık (Top2)", range:[1,2]}
+    : clubGoalFromStrength(Career.clubStrength);
+
+  const stayPersonalGoal = personalGoalFor(Career.pos, Career.clubStrength);
+
+  // Stay/Extend
+  if(Career.contractYearsLeft > 1){
+    const raisePct = rnd(0,5);
+    const wage = clamp(Math.round(Career.wageK * (1 + raisePct/100)), 8, 650);
+    offers.push({
+      kind:"STAY", isStay:true,
+      clubId: Career.clubId, clubName: Career.clubName,
+      country: Career.nation, league: Career.league,
+      division: Career.division, strength: Career.clubStrength,
+      wageK: wage, role: roleObj.role, minutes: roleObj.minutes,
+      contractYears: Career.contractYearsLeft,
+      clubGoal: stayClubGoal, personalGoal: stayPersonalGoal,
+      note: `Mevcut sözleşmeyle devam. Maaş +%${raisePct}`,
+      status:"ACCEPTED", feeOfferM:0, counterFeeM:0
+    });
+  } else {
+    const raisePct = rnd(5,15);
+    const wage = clamp(Math.round(Career.wageK * (1 + raisePct/100)), 8, 650);
+    offers.push({
+      kind:"EXTEND", isStay:true,
+      clubId: Career.clubId, clubName: Career.clubName,
+      country: Career.nation, league: Career.league,
+      division: Career.division, strength: Career.clubStrength,
+      wageK: wage, role: roleObj.role, minutes: roleObj.minutes,
+      contractYears: rnd(1,3),
+      clubGoal: stayClubGoal, personalGoal: stayPersonalGoal,
+      note: `Sözleşme uzat. Maaş +%${raisePct}`,
+      status:"ACCEPTED", feeOfferM:0, counterFeeM:0
+    });
+  }
+
+  const count = dynOfferCount();
+  const band = offerBand();
+
+  // ✅ Yurtiçi havuz
+  let poolLocal = CLUBS.filter(c =>
+    c.country===Career.nation &&
+    c.strength >= band.minS && c.strength <= band.maxS &&
+    eliteGate(c.strength)
+  );
+
+  // ✅ Yurtdışı havuz (artık var)
+  const wantsOverseas = (Career.division===1 && (Career.rep>=22 || Career.rating>=78)) || (Career.rep>=40);
+  let poolForeign = [];
+  if(wantsOverseas){
+    poolForeign = CLUBS.filter(c =>
+      c.country!==Career.nation &&
+      c.division===1 && // yurtdışı genelde D1
+      c.strength >= (band.minS+4) &&
+      c.strength <= (band.maxS+6) &&
+      eliteGate(c.strength)
+    );
+  }
+
+  // fallback
+  if(poolLocal.length < 10) poolLocal = CLUBS.filter(c=>c.country===Career.nation && eliteGate(c.strength));
+
+  // offer mix: eğer uygun ise %35 yurtdışı
+  for(let i=0;i<count;i++){
+    const useForeign = (poolForeign.length>=10 && rnd(1,100)<=35);
+    const pool = useForeign ? poolForeign : poolLocal;
+
+    let club = pick(pool);
+    let tries=0;
+    while((offers.some(o=>o.clubId===club.id) || club.id===Career.clubId) && tries<80){
+      club = pick(pool); tries++;
+    }
+
+    const rObj = computeRole(club.strength, Career.rating);
+    const wage = clamp(Math.round((club.strength*2.0 + Career.rating*1.3 + rnd(-16,18)) * (rObj.minutes/0.75)), 10, 800);
+
+    const clubGoal = clubGoalFromStrength(club.strength);
+    const personalGoal = personalGoalFor(Career.pos, club.strength);
+
+    const feeOfferM = estimateOfferFeeM(club.strength);
+    const decision = clubDecisionOnOffer(feeOfferM);
+
+    offers.push({
+      kind:"TRANSFER", isStay:false,
+      clubId: club.id, clubName: club.name,
+      country: club.country, league: club.league,
+      division: club.division, strength: club.strength,
+      wageK: wage, role: rObj.role, minutes: rObj.minutes,
+      contractYears: rnd(1,3),
+      clubGoal, personalGoal,
+      status: decision.status,
+      feeOfferM, counterFeeM: decision.counterFeeM||0, minFeeM: decision.minFee||0
+    });
+  }
+
+  Career.lastOffers = offers;
+  Career.selectedOfferIndex = -1;
+
+  const sub = document.getElementById("offerSubtitle");
+  if(Career.contractYearsLeft === 0) sub.textContent = "Free agent → bonservis yok, teklifler direkt seçilebilir.";
+  else if(Career.contractYearsLeft === 1) sub.textContent = "Son yıl → teklif gelebilir ama çok abartmaz. (max 3 transfer)";
+  else sub.textContent = "Sözleşmen devam ediyor → kulüp reddedebilir / counter atabilir. (max 3 transfer)";
+  switchTab('tabOffers');
+}
+
+function renderOffers(){
+  const list = document.getElementById("offerList");
+  list.innerHTML = "";
+
+  Career.lastOffers.forEach((o, idx)=>{
+    const div = document.createElement("div");
+    div.className = "card";
+    const selected = (Career.selectedOfferIndex===idx);
+    div.style.borderColor = selected ? "rgba(110,231,255,.55)" : "rgba(255,255,255,.10)";
+    div.style.background = selected ? "rgba(110,231,255,.10)" : "rgba(0,0,0,.18)";
+
+    const badge = o.isStay ? `<span class="tag">STAY</span>` : `<span class="tag">TRANSFER</span>`;
+    const divTag = `<span class="tag">${leagueLabel(o.division)}</span>`;
+    const note = o.note ? `<div class="muted" style="margin-top:6px">${o.note}</div>` : "";
+
+    let transferInfo = "";
+    let actionArea = "";
+
+    if(!o.isStay){
+      const feeLine = (Career.contractYearsLeft === 0) ? "Bonservis: €0.0M (Free Agent)" : `Teklif Bonservis: ${fmtMoneyM(o.feeOfferM)}`;
+      const minLine = (o.minFeeM && o.minFeeM > 0) ? `Kulüp beklentisi (min): ${fmtMoneyM(o.minFeeM)}` : "";
+
+      transferInfo = `
+        <div class="hr"></div>
+        <div class="muted">${feeLine}${minLine ? " • " + minLine : ""}</div>
+        <div style="margin-top:8px" class="row">
+          ${statusBadge(o.status)}
+          ${o.status==="COUNTERED" ? `<span class="tag warn">Counter: ${fmtMoneyM(o.counterFeeM)}</span>` : ""}
+        </div>
+      `;
+
+      if(o.status==="REJECTED"){
+        actionArea = `<button class="btn full secondary" disabled>SEÇİLEMEZ (REJECTED)</button>`;
+      } else if(o.status==="COUNTERED"){
+        actionArea = `
+          <div class="two" style="margin-top:10px">
+            <button class="btn warn full" data-act="negotiate">PAZARLIK YAP</button>
+            <button class="btn full secondary" disabled>ÖNCE PAZARLIK</button>
+          </div>
+          <div class="muted" style="margin-top:8px">Pazarlık kabul ihtimali: %${counterAcceptChance(o)} (max 78)</div>
+        `;
+      } else {
+        actionArea = `<button class="btn full ${selected?"":"secondary"}" data-act="select">SEÇ</button>`;
+      }
+    } else {
+      actionArea = `<button class="btn full ${selected?"":"secondary"}" data-act="select">SEÇ</button>`;
+    }
+
+    div.innerHTML = `
+      <div class="row" style="justify-content:space-between">
+        <div style="font-weight:950;font-size:16px">${o.clubName}</div>
+        <div class="stars" style="color:var(--warn);font-weight:950">${stars(o.strength)}</div>
+      </div>
+      <div class="row" style="justify-content:space-between;margin-top:6px">
+        <div class="muted">${o.country} • ${o.league}</div>
+        <div class="row" style="gap:8px">${badge}${divTag}</div>
+      </div>
+      ${note}
+      ${transferInfo}
+      <div class="hr"></div>
+      <div class="kvs">
+        <div class="kv"><div class="k">Rol</div><div class="v">${o.role}</div></div>
+        <div class="kv"><div class="k">Dakika Payı</div><div class="v">${Math.round(o.minutes*100)}%</div></div>
+        <div class="kv"><div class="k">Maaş</div><div class="v">${o.wageK}K</div></div>
+        <div class="kv"><div class="k">Kontrat</div><div class="v">${o.contractYears} yıl</div></div>
+        <div class="kv"><div class="k">Kulüp hedefi</div><div class="v">${o.clubGoal.label}</div></div>
+        <div class="kv"><div class="k">Kişisel hedef</div><div class="v">${o.personalGoal.label}</div></div>
+      </div>
+      <div style="margin-top:10px">
+        ${actionArea}
+      </div>
+    `;
+
+    const negotiateBtn = div.querySelector('[data-act="negotiate"]');
+    if(negotiateBtn){
+      negotiateBtn.onclick = ()=>{
+        const chance = counterAcceptChance(o);
+        showLoader("Pazarlık yapılıyor…", "Kulüpler bonservis üzerinde anlaşmaya çalışıyor.");
+        setTimeout(()=>{
+          hideLoader();
+          const roll = rnd(1,100);
+          if(roll <= chance){
+            o.feeOfferM = o.counterFeeM;
+            o.status = "ACCEPTED";
+            o.counterFeeM = 0;
+            renderOffers();
+          } else {
+            o.status = "REJECTED";
+            o.counterFeeM = 0;
+            renderOffers();
+          }
+        }, 900);
+      };
+    }
+
+    const selectBtn = div.querySelector('[data-act="select"]');
+    if(selectBtn){
+      selectBtn.onclick = ()=>{
+        Career.selectedOfferIndex = idx;
+        document.getElementById("btnPlaySeason").disabled = false;
+        document.getElementById("hint").textContent = `Seçtin: ${o.clubName} (${o.isStay ? "Stay" : "Transfer"}).`;
+        renderOffers();
+      };
+    }
+
+    list.appendChild(div);
+  });
+}
+
+/* =========================
+   Critical season
+========================= */
+function isCriticalSeason(){
+  const contract = Career.contractYearsLeft;
+  if(contract === 0 || contract === 1) return true;
+  if(Career.justRelegated || Career.justPromoted) return true;
+  if(Career.age >= 34) return true;
+  return false;
+}
+
+/* =========================
+   Rating Rules (D2 cap 75, 90+ very hard, harsher drops)
+========================= */
+function applyRatingCaps(){
+  // D2 cap
+  if(Career.division===2 && Career.rating > 75) Career.rating = 75;
+
+  // 90+ zor: unlocked değilse 90'a yapışsın
+  if(Career.rating > 90 && !Career.memoryFlags.legendaryUnlocked){
+    Career.rating = 90;
+  }
+
+  // 99 sadece legendaryUnlocked + çok nadir growth ile
+  if(Career.rating > 99) Career.rating = 99;
+}
+
+/* =========================
+   Season Simulation (with dice flow)
+========================= */
+function simulateSeasonCore(dicePack){
+  const offer = Career.lastOffers[Career.selectedOfferIndex];
+
+  // v8 Adaptasyon setup: yeni ve güçlü lige geçişte 1 sezon adaptasyon cezası
+  const prevClub = getClubById(Career.clubId);
+  const prevNation = prevClub ? prevClub.country : Career.nation;
+  const prevStrength = prevClub ? prevClub.strength : Career.clubStrength;
+
+  // Carry-over adapt penalty
+  Career._adaptThisSeason = (Career._adaptCarrySeasons||0) > 0;
+
+  // Apply offer
+  if(offer.isStay){
+    Career.wageK = offer.wageK;
+    Career.contractYearsLeft = offer.contractYears;
+  } else {
+    Career.clubId = offer.clubId;
+    Career.wageK = offer.wageK;
+    Career.contractYearsLeft = offer.contractYears;
+    Career.seasonsAtCurrentClub = 0;
+  }
+
+  refreshCareerClubFromClubList();
+
+  Career.clubGoal = (Career.justRelegated && Career.division===2) ? {label:"Üst Lige Çık (Top2)", range:[1,2]} : offer.clubGoal;
+  Career.personalGoal = offer.personalGoal;
+
+  const roleObj = computeRole(Career.clubStrength, Career.rating);
+  Career.role = offer.role || roleObj.role;
+  const minutes = offer.minutes ?? roleObj.minutes;
+
+  // season cash
+  const seasonCashM = (Career.wageK * 52) / 1000;
+  Career.cashM = Math.round((Career.cashM + seasonCashM) * 10) / 10;
+
+  // flavor/breakout/critical
+  const seasonFlavor = rollSeasonFlavor();
+  const breakout = rollBreakoutSlump();
+  const criticalSeason = isCriticalSeason();
+
+  // dice package
+  const diceCount = dicePack?.count || 0;
+  const diceSum = dicePack?.sum || "—";
+  const diceAcc = dicePack?.acc || {ratingDelta:0, repDelta:0, followersDelta:0, matchesPenalty:0, formMult:1.0, didRoll6:false};
+
+  // matches
+  let matches = roleMatches(minutes);
+  matches = Math.max(6, matches - (diceAcc.matchesPenalty||0));
+
+  // production multipliers
+  const strengthFactor = Career.clubStrength/100;
+  const ratingFactor = Career.rating/100;
+
+  const divMult = (Career.division===2) ? 1.18 : 1.0;
+  const flavorMult = (seasonFlavor==="GOLDEN") ? 1.18 : (seasonFlavor==="DRY") ? 0.86 : 1.0;
+  const breakoutMult = (breakout==="BREAKOUT") ? 1.10 : (breakout==="SLUMP") ? 0.90 : 1.0;
+
+  let roleProd = 1.0;
+  if(Career.role==="Star") roleProd = 1.16;
+  if(Career.role==="Rotation") roleProd = 0.78;
+
+    // v8 Kariyer Sonu Dram (35+): sezon başında küçük ihtimaller
+  // - %5 ani sakatlık: -8 rating
+  // - %3 efsane vibe: rep +10
+  // - %2 ekstra form: sezon form bonusu
+  let dramaFormMult = 1.0;
+  if(Career.age >= 35){
+    const dr = rnd(1,100);
+    if(dr <= 5){
+      Career.rating = clamp(Career.rating - 8, 40, 99);
+      Career.lastDrama = "ANI SAKATLIK (-8 Rating)";
+    } else if(dr <= 8){
+      Career.rep = clamp(Career.rep + 10, 0, 100);
+      Career.lastDrama = "EFSANE MOD (Rep +10)";
+    } else if(dr <= 10){
+      dramaFormMult = 1.08;
+      Career.lastDrama = "SÜRPRİZ FORM (+%8)";
+    } else {
+      Career.lastDrama = null;
+    }
+  } else {
+    Career.lastDrama = null;
+  }
+  
+
+  // dice form affects production
+  const formMult = clamp(diceAcc.formMult || 1.0, 0.85, 1.25) * dramaFormMult;
+
+  // goals/assists (rebalanced)
+  let goals=0, assists=0;
+  if(Career.pos === "ST"){
+    const baseG = (4.5 + strengthFactor*15 + ratingFactor*10);
+    const baseA = (2.0 + strengthFactor*9 + ratingFactor*7);
+    goals = Math.round(baseG * minutes * 0.95 * formMult * divMult * flavorMult * breakoutMult * roleProd);
+    assists = Math.round(baseA * minutes * 0.72 * formMult * divMult * flavorMult * breakoutMult * (Career.role==="Star"?1.04:1.0));
+  } else {
+    const baseG = (2.5 + strengthFactor*9 + ratingFactor*7);
+    const baseA = (4.5 + strengthFactor*13 + ratingFactor*10);
+    goals = Math.round(baseG * minutes * 0.65 * formMult * divMult * flavorMult * breakoutMult * (Career.role==="Star"?1.04:1.0));
+    assists = Math.round(baseA * minutes * 0.92 * formMult * divMult * flavorMult * breakoutMult * roleProd);
+  }
+
+  goals += rnd(-2, 2);
+  assists += rnd(-2, 2);
+  goals = clamp(goals, 0, 32);
+  assists = clamp(assists, 0, 20);
+
+  // league tables (seasonDivision snapshot)
+  const seasonDivision = Career.division;
+
+  const d1Table = simulateLeagueStandings(Career.nation, 1);
+  const d2Table = simulateLeagueStandings(Career.nation, 2);
+
+  // get my finish from the division played THIS season
+  const tableObj = (seasonDivision===1) ? d1Table : d2Table;
+  const table = tableObj.rows;
+  const myRow = table.find(x=>x.id===Career.clubId);
+  let leagueFinish = myRow ? myRow.finish : rnd(6, 12);
+
+  // v8 Adaptasyon çözülmesi: adaptasyon sezonunda Top6 => biter, küme düşüş => 1 sezon uzar
+  if(Career._adaptThisSeason){
+    if(leagueFinish <= 6){
+      Career._adaptCarrySeasons = 0;
+    } else {
+      Career._adaptCarrySeasons = 0;
+      // relegation olursa aşağıda tekrar açacağız
+    }
+  }
+
+  // Miracle season logic (personal)
+  const top4IdsNow = tableObj.top4Ids || [];
+  const isMyClubTop4 = top4IdsNow.includes(Career.clubId);
+  let miracleSeason = false;
+  let miracleChampion = false;
+
+  if(!isMyClubTop4 && leagueFinish === 1){
+    miracleSeason = true;
+    miracleChampion = true;
+  } else if(!isMyClubTop4 && leagueFinish <= 3){
+    miracleSeason = true;
+  }
+
+  // trophies (simple: league title if finish 1, intl if strong & D1)
+  const wonLeague = (leagueFinish===1);
+  const intlChance = clamp((Career.clubStrength - 84) * 0.8, 0, 18);
+  const wonIntl = (seasonDivision===1) && (rnd(0,100) < intlChance);
+
+  // 18 takım liginde makul sıralama (max ~36: her takımdan 2 golcü)
+  const topGoals   = 26 + rnd(-2, 3);
+  const topAssists = 17 + rnd(-2, 2);
+  const goalRank = clamp(Math.round((topGoals - goals) * 0.6) + rnd(1, 4), 1, 36);
+  const astRank  = clamp(Math.round((topAssists - assists) * 0.7) + rnd(1, 4), 1, 36);
+
+  // perf
+  const output = (goals*2.0 + assists*1.4) / Math.max(1, matches);
+  let perfScore = (output * 10) + (minutes * 4);
+  if(seasonFlavor==="GOLDEN") perfScore += 1.0;
+  if(seasonFlavor==="DRY") perfScore -= 0.9;
+  if(breakout==="BREAKOUT") perfScore += 0.6;
+  if(breakout==="SLUMP") perfScore -= 0.6;
+  perfScore = Math.round(perfScore * 10) / 10;
+
+  // rating delta: harsher drops, harder above 85/90
+  let ratingBase;
+  if(perfScore >= 18) ratingBase = rnd(4,6);
+  else if(perfScore >= 15) ratingBase = rnd(2,4);
+  else if(perfScore >= 12) ratingBase = rnd(1,3);
+  else if(perfScore >= 9) ratingBase = rnd(0,1);
+  else if(perfScore >= 7) ratingBase = rnd(-2,0);
+  else if(perfScore >= 5) ratingBase = rnd(-4,-2);
+  else ratingBase = rnd(-5,-3);
+
+  if(breakout==="BREAKOUT") ratingBase += 1;
+  if(breakout==="SLUMP") ratingBase -= 1;
+
+  let ratingDelta = clamp(ratingBase, -6, 7);
+
+  // dice rating delta (direct)
+  ratingDelta += (diceAcc.ratingDelta||0);
+
+  // 30+ max +1
+  if(Career.age >= 30 && ratingDelta > 1) ratingDelta = 1;
+
+  // soft cap 85+: gain nerf
+  if(Career.rating >= 85 && ratingDelta > 0){
+    ratingDelta = Math.max(0, ratingDelta - 1);
+    if(Career.rating >= 88) ratingDelta = Math.max(0, ratingDelta - 1);
+  }
+
+  // hard cap 90+: gain almost none unless legendary unlocked
+  if(Career.rating >= 90 && ratingDelta > 0){
+    ratingDelta = (Career.memoryFlags.legendaryUnlocked ? 1 : 0);
+  }
+
+  // rep delta
+  let repDelta = 0;
+  if(perfScore >= 18) repDelta += rnd(5,8);
+  else if(perfScore >= 15) repDelta += rnd(3,6);
+  else if(perfScore >= 12) repDelta += rnd(2,4);
+  else if(perfScore >= 9) repDelta += rnd(0,2);
+  else if(perfScore <= 6) repDelta -= rnd(2,5);
+
+  if(wonLeague) repDelta += 6;
+  if(wonIntl) repDelta += 10;
+  if(criticalSeason) repDelta += (perfScore>=12 ? 2 : -3);
+
+  // dice rep delta (direct)
+  repDelta += (diceAcc.repDelta||0);
+
+  repDelta = clamp(repDelta, -12, 24);
+
+  // value delta
+  let valueDelta = (ratingDelta * 0.8) + (goals*0.05) + (assists*0.035) + (wonLeague?1.2:0) + (wonIntl?2.0:0);
+  if(seasonFlavor==="GOLDEN") valueDelta += 0.6;
+  if(seasonFlavor==="DRY") valueDelta -= 0.6;
+  valueDelta = Math.round(valueDelta*10)/10;
+  valueDelta = clamp(valueDelta, -6.0, 10.0);
+
+  // goal checks
+  const clubGoalMet = checkClubGoal(Career.clubGoal, leagueFinish);
+  const personalGoalMet = checkPersonalGoal(Career.personalGoal, goals, assists);
+
+  if(clubGoalMet){
+    repDelta += rnd(3,8);
+    Career.clubHappiness = clamp(Career.clubHappiness + rnd(6,12), 0, 100);
+  } else {
+    repDelta -= rnd(4,9);
+    Career.clubHappiness = clamp(Career.clubHappiness - rnd(7,14), 0, 100);
+  }
+
+  if(personalGoalMet){
+    let add = rnd(0,1);
+    if(Career.age >= 30) add = 0;
+    ratingDelta = clamp(ratingDelta + add, -6, 7);
+    if(Career.age >= 30 && ratingDelta > 1) ratingDelta = 1;
+    if(Career.rating >= 90 && ratingDelta > 0) ratingDelta = (Career.memoryFlags.legendaryUnlocked ? 1 : 0);
+    valueDelta = clamp(Math.round((valueDelta + rnd(2,10)/10)*10)/10, -6.0, 10.0);
+  }
+
+
+  // v8 PRIME WINDOW: 23-27 pozitif gelişimi biraz güçlendir, 32+ sonrası zorlaştır
+  if(Career.age >= 23 && Career.age <= 27 && ratingDelta > 0){
+    ratingDelta = Math.min(7, Math.round(ratingDelta * 1.2));
+  }
+  if(Career.age >= 32 && ratingDelta > 0){
+    ratingDelta = Math.max(0, Math.round(ratingDelta * 0.7));
+  }
+
+  // v8 Maaş–Motivasyon: yüksek maaş + kötü sezon => rep daha sert düşer; düşük maaş + iyi sezon => rep daha hızlı artar
+  const goalOK = personalGoalMet;
+  const clubGoalOK = clubGoalMet;
+  const goodSeason = goalOK || clubGoalOK || (leagueFinish <= 6);
+  const badSeason = (!goalOK && !clubGoalOK && leagueFinish >= 12);
+
+  if(Career.wageK >= 80 && badSeason){
+    if(repDelta < 0) repDelta = Math.round(repDelta * 1.5);
+    repDelta -= 1;
+  }
+  if(Career.wageK <= 25 && goodSeason){
+    if(repDelta > 0) repDelta = Math.round(repDelta * 1.3);
+    repDelta += 1;
+  }
+
+  // v8 Hanedan (Dynasty) buff: aynı kulüpte son 3 sezonda 2 şampiyonluk / son 5 sezonda 3 şampiyonluk
+  let dynastyLvl = 0;
+  const sameClubHist = Career.clubHistory.filter(h=>h.club===Career.clubName);
+  const last3 = sameClubHist.slice(-3);
+  const last5 = sameClubHist.slice(-5);
+  const t3 = last3.filter(h=>h.wonLeague).length;
+  const t5 = last5.filter(h=>h.wonLeague).length;
+  if(t5 >= 3) dynastyLvl = 2;
+  else if(t3 >= 2) dynastyLvl = 1;
+
+  if(dynastyLvl>0){
+    if(repDelta < 0) repDelta = Math.round(repDelta * 0.7);
+    if(Career.age >= 32 && ratingDelta < 0) ratingDelta = Math.round(ratingDelta * 0.7);
+  }
+
+  // v8 Adaptasyon: yeni lige geçişte ilk sezon -2 rating (bayrak)
+  if(Career._adaptThisSeason){
+    ratingDelta -= 2;
+  }
+
+  // v8 Veteran buff aktifse negatif rating düşüşünü yumuşat
+  if((Career._veteranBuffSeasons||0) > 0 && ratingDelta < 0){
+    ratingDelta = Math.round(ratingDelta * 0.7);
+  }
+
+  // Apply base
+  Career.rating = clamp(Career.rating + ratingDelta, 40, 99);
+  Career.rep = clamp(Career.rep + repDelta, 0, 100);
+  Career.valueM = clamp(Career.valueM + valueDelta, 0.4, 250);
+  Career.peakValueM = Math.max(Career.peakValueM, Career.valueM);
+  Career.peakRating = Math.max(Career.peakRating || 60, Career.rating);
+
+  // D2 cap + 90+ rules
+  applyRatingCaps();
+  // v8: 28+ ST ise ve 25 gol altı sezon geçirdiyse -5 rating (tüm güncellemelerden sonra)
+  if(Career.pos === "ST" && Career.age >= 28 && goals < 25){
+    Career.rating = clamp(Career.rating - 5, 40, 99);
+    applyRatingCaps();
+  }
+
+  // v8 Veteran Lider: 30+ yaşta kupa aldıysan düşüş 2 sezon yavaşlar (buff sayacı)
+  if(Career.age >= 30 && (wonLeague || wonIntl)){
+    Career._veteranBuffSeasons = clamp((Career._veteranBuffSeasons||0) + 2, 0, 6);
+  }
+  if((Career._veteranBuffSeasons||0) > 0){
+    Career._veteranBuffSeasons -= 1;
+  }
+
+  Career.goals += goals;
+  Career.assists += assists;
+
+  if(wonLeague) Career.leagueTitles += 1;
+  if(wonIntl) Career.intlTitles += 1;
+  if(Career.age >= 30 && (wonLeague || wonIntl)) Career.memoryFlags.wonTrophyAfter30 = true;
+
+  // club strength drift (end of season)
+  const clubObj = getClubById(Career.clubId);
+  if(clubObj){
+    let drift = rnd(-2,2);
+    if(leagueFinish<=4) drift += rnd(0,1);
+    if(leagueFinish>=17) drift -= rnd(0,1);
+    clubObj.strength = clamp(clubObj.strength + drift, 55, 92);
+  }
+
+  // Promotion/Relegation: decide by THIS season finish
+  let leagueEvent = "—";
+  Career.justRelegated = false;
+  Career.justPromoted = false;
+
+  if(seasonDivision===1 && leagueFinish >= (TEAMS_PER_DIV - RELEGATE_N + 1)){
+    leagueEvent = "RELEGATED";
+    Career.justRelegated = true;
+    if(Career._adaptThisSeason) Career._adaptCarrySeasons = 1;
+
+    const drop = rnd(2,4);
+    Career.rating = clamp(Career.rating - drop, 40, 99);
+    Career.rep = clamp(Career.rep - 6, 0, 100);
+    const pct = rnd(12,28);
+    Career.valueM = clamp(Math.round((Career.valueM * (1 - pct/100))*10)/10, 0.4, 250);
+
+  } else if(seasonDivision===2 && leagueFinish <= PROMOTE_N){
+    leagueEvent = "PROMOTED";
+    Career.justPromoted = true;
+
+    let up = rnd(1,2);
+    if(Career.age >= 30) up = 1;
+    Career.rating = clamp(Career.rating + up, 40, 99);
+    Career.rep = clamp(Career.rep + rnd(2,5), 0, 100);
+  }
+
+  // After decisions, apply league movement to club divisions globally
+  const move = applyLeagueMovementForCountry(Career.nation, d1Table, d2Table);
+
+  // refresh division now (club might have moved)
+  refreshCareerClubFromClubList();
+  applyRatingCaps(); // D2 cap might apply after drop
+
+  // memory flags
+  if(Career.lastResult && Career.lastResult.leagueEvent==="RELEGATED" && leagueEvent==="PROMOTED"){
+    Career.memoryFlags.cameBackUp = true;
+  }
+  if(leagueEvent==="PROMOTED" && Career.age >= 28 && (Career.role==="Starter" || Career.role==="Star")){
+    Career.memoryFlags.promotedCaptain = true;
+  }
+
+  // Legendary Growth Roll (story-linked, %0.1)
+  // şart: dice içinde 6 gelmiş olacak + perf iyi + golden/breakout gibi "hikaye"
+  let legendaryStory = false;
+  let legendaryText = "—";
+  if(!Career.memoryFlags.legendaryUnlocked){
+    const okStory = (diceAcc.didRoll6 && perfScore >= 15 && (seasonFlavor==="GOLDEN" || breakout==="BREAKOUT"));
+    if(okStory){
+      legendaryStory = true;
+      // %0.1
+      if(rnd(1,1000) === 1){
+        Career.memoryFlags.legendaryUnlocked = true;
+        Career.rating = clamp(Career.rating + rnd(2,4), 40, 99);
+        legendaryText = "✅ KİLİT AÇILDI: Legendary Growth Roll (%0.1) → 99 yolu açıldı!";
+      } else {
+        legendaryText = "⚡ Legendary Growth hikayesi yaşandı ama kilit açılmadı (çok nadir).";
+      }
+    }
+  } else {
+    // unlocked ise çok nadir +1 yakalama
+    if(diceAcc.didRoll6 && rnd(1,100)<=4){
+      Career.rating = clamp(Career.rating + 1, 40, 99);
+      legendaryText = "⭐ Unlocked sonrası mikro büyüme: +1 rating.";
+      legendaryStory = true;
+    }
+  }
+
+  applyRatingCaps();
+
+  Career.memoryFlags.legendaryStory = legendaryStory;
+
+  // followers delta (dice follower already applied inside updateFollowers input)
+  const followersDelta = updateFollowers({
+    perfScore, goals, assists, matches,
+    wonLeague, wonIntl,
+    clubGoalMet, leagueEvent,
+    seasonFlavor, criticalSeason,
+    diceFollowersDelta: diceAcc.followersDelta||0
+  });
+
+  // score
+  let seasonScore = goals*2 + assists*1;
+  if(clubGoalMet) seasonScore += 14; else seasonScore -= 8;
+  if(personalGoalMet) seasonScore += 9;
+  if(wonLeague) seasonScore += 24;
+  if(wonIntl) seasonScore += 38;
+  if(leagueEvent==="RELEGATED") seasonScore -= 24;
+  if(leagueEvent==="PROMOTED") seasonScore += 16;
+  if(seasonFlavor==="GOLDEN") seasonScore += 6;
+  if(seasonFlavor==="DRY") seasonScore -= 5;
+  if(breakout==="BREAKOUT") seasonScore += 4;
+  if(breakout==="SLUMP") seasonScore -= 4;
+  if(criticalSeason) seasonScore += (clubGoalMet?6:-4);
+  if(miracleSeason) seasonScore += 8;
+  if(miracleChampion) seasonScore += 20;
+  Career.score += seasonScore;
+
+  // club seasons
+  Career.seasonsAtCurrentClub += 1;
+  if(Career.seasonsAtCurrentClub >= 5) Career.memoryFlags.clubLegend = true;
+
+  // club history
+  Career.clubHistory.push({
+    season: Career.season,
+    age: Career.age,
+    club: Career.clubName,
+    league: Career.league,
+    division: seasonDivision,
+    strength: Career.clubStrength,
+    role: Career.role,
+    wonLeague: wonLeague
+  });
+
+  // best season
+  if(!Career.bestSeason || perfScore > Career.bestSeason.perfScore){
+    Career.bestSeason = {
+      season: Career.season, age: Career.age,
+      club: Career.clubName, league: Career.league, division: seasonDivision,
+      goals, assists, perfScore,
+      ratingDelta, repDelta,
+      finish: leagueFinish,
+      clubGoalMet, personalGoalMet,
+      seasonFlavor, breakout, criticalSeason
+    };
+  }
+
+  Career.lastResult = {
+    matches, minutes,
+    goals, assists,
+    wonLeague, wonIntl,
+    ratingDelta, repDelta, valueDelta,
+    perfScore, leagueFinish, goalRank, astRank,
+    miracleSeason, miracleChampion,
+    leagueTableRows: tableObj.rows,
+    leagueChampionId: tableObj.championId,
+    leagueRelegatedIds: tableObj.relegatedIds,
+    leagueTop4Ids: tableObj.top4Ids,
+    clubGoalMet, personalGoalMet,
+    seasonCashM,
+    leagueEvent,
+    eventText:
+      `Sezon akışı: ${seasonFlavor}${breakout!=="NONE" ? " • "+breakout : ""}${criticalSeason ? " • KRİTİK" : ""}\n`+
+      `Lig: ${leagueFinish}. sıra (18 takım)\n`+
+      `Düşme/Çıkma: D1 son 2 düşer • D2 ilk 2 çıkar\n`+
+      `Zar: ${diceSum}\n`+
+      `${legendaryText}`,
+    followersDelta,
+    seasonFlavor,
+    breakout,
+    criticalSeason,
+    seasonDivision,
+    diceCount,
+    diceSum,
+    legendaryStory,
+    legendaryText
+  };
+}
+
+/* =========================
+   Achievements
+========================= */
+const ACHIEVEMENTS = [
+  { id:'first_season',   icon:'⚽', name:'İlk Adım',           desc:'İlk sezonu tamamladın.',                          border:'blue',  check:(c,r)=> c.season >= 2 },
+  { id:'promoted',       icon:'⬆️', name:'Yükseldik!',          desc:'D2\'den D1\'e terfi ettin.',                       border:'green', check:(c,r)=> r.leagueEvent==='PROMOTED' },
+  { id:'relegated',      icon:'⬇️', name:'Acı Gerçek',          desc:'Küme düştün. Buradan daha güçlü dön.',            border:'red',   check:(c,r)=> r.leagueEvent==='RELEGATED' },
+  { id:'champion',       icon:'🏆', name:'Şampiyon!',           desc:'İlk lig şampiyonluğunu kazandın.',                border:'gold',  check:(c,r)=> r.wonLeague },
+  { id:'intl_title',     icon:'🌍', name:'Kıta Kupası',         desc:'Uluslararası kupa kazandın.',                     border:'gold',  check:(c,r)=> r.wonIntl },
+  { id:'goals_20',       icon:'🎯', name:'Gol Makinesi',        desc:'Tek sezonda 20 veya daha fazla gol attın.',       border:'gold',  check:(c,r)=> r.goals >= 20 },
+  { id:'assists_12',     icon:'🎨', name:'Asist Ustası',        desc:'Tek sezonda 12 veya daha fazla asist yaptın.',    border:'blue',  check:(c,r)=> r.assists >= 12 },
+  { id:'career_100g',    icon:'💯', name:'100 Kariyer Golü',    desc:'Kariyerinde toplam 100 gole ulaştın.',            border:'gold',  check:(c,r)=> c.goals >= 100 },
+  { id:'rating_80',      icon:'⭐', name:'Yıldız Oyuncu',       desc:'Rating 80\'e ulaştın.',                           border:'blue',  check:(c,r)=> c.rating >= 80 },
+  { id:'rating_90',      icon:'👑', name:'Elite',               desc:'Rating 90\'a ulaştın. Çok az oyuncu bu noktaya gelir.', border:'gold', check:(c,r)=> c.rating >= 90 },
+  { id:'followers_1m',   icon:'📱', name:'Sosyal Fenomen',      desc:'1 milyon takipçiye ulaştın.',                     border:'blue',  check:(c,r)=> c.followers >= 1_000_000 },
+  { id:'followers_10m',  icon:'🌐', name:'Dünya Yıldızı',       desc:'10 milyon takipçiye ulaştın.',                    border:'gold',  check:(c,r)=> c.followers >= 10_000_000 },
+  { id:'golden_season',  icon:'🔥', name:'Altın Sezon',         desc:'GOLDEN tipinde bir sezon yaşadın.',               border:'gold',  check:(c,r)=> r.seasonFlavor==='GOLDEN' },
+  { id:'both_goals',     icon:'✅', name:'Çift Hedef',          desc:'Kulüp ve kişisel hedefin ikisini aynı sezonda tutturuldu.', border:'green', check:(c,r)=> r.clubGoalMet && r.personalGoalMet },
+  { id:'club_legend',    icon:'🏛️', name:'Kulüp Efsanesi',      desc:'Bir kulübün tarihe geçen ismi oldun.',            border:'gold',  check:(c,r)=> c.memoryFlags.clubLegend },
+  { id:'legendary_path', icon:'🔓', name:'99\'a Giden Yol',     desc:'Legendary growth kilidi açıldı. 99 artık hayal değil.', border:'gold', check:(c,r)=> c.memoryFlags.legendaryUnlocked },
+  { id:'season_10',      icon:'📅', name:'Uzun Soluk',          desc:'10. sezonu tamamladın. Kariyer uzun yolda.',      border:'blue',  check:(c,r)=> c.season >= 10 },
+  { id:'comeback',       icon:'💪', name:'Geri Döndüm',         desc:'Küme düştükten sonra D1\'e geri yükseldin.',      border:'green', check:(c,r)=> c.memoryFlags.cameBackUp },
+];
+
+function checkNewAchievements(r){
+  const earned = Career.earnedAchievements;
+  const newOnes = [];
+  for(const ach of ACHIEVEMENTS){
+    if(earned.includes(ach.id)) continue;
+    try{ if(ach.check(Career, r)){ earned.push(ach.id); newOnes.push(ach); } } catch(_){}
+  }
+  return newOnes;
+}
+
+/* Goal reveal flow */
+function showGoalRevealFlow(r, afterDone){
+  const steps = [
+    { type:'KULÜP HEDEFİ', label: Career.clubGoal.label, met: r.clubGoalMet },
+    { type:'KİŞİSEL HEDEF', label: Career.personalGoal.label, met: r.personalGoalMet },
+  ];
+  const overlay = document.getElementById('goalRevealOverlay');
+  const card    = document.getElementById('goalRevealCard');
+  let stepIdx = 0;
+
+  function showStep(){
+    if(stepIdx >= steps.length){ overlay.style.display='none'; afterDone(); return; }
+    const s = steps[stepIdx];
+    document.getElementById('goalRevealType').textContent    = s.type;
+    document.getElementById('goalRevealLabel').textContent   = s.label;
+    const resEl = document.getElementById('goalRevealResult');
+    const outEl = document.getElementById('goalRevealOutcome');
+    resEl.className = 'goalRevealResult';
+    resEl.textContent = '';
+    outEl.textContent = '';
+    // re-trigger card animation
+    card.style.animation = 'none';
+    void card.offsetWidth;
+    card.style.animation = '';
+    overlay.style.display = 'flex';
+
+    setTimeout(()=>{
+      resEl.textContent = s.met ? '✅' : '❌';
+      resEl.classList.add('show');
+      outEl.textContent = s.met ? 'BAŞARDIN!' : 'Tutmadı.';
+      outEl.style.color = s.met ? 'var(--good)' : 'var(--bad)';
+      if(s.met){
+        overlay.style.background = 'rgba(6,22,12,.88)';
+        card.style.borderColor    = 'rgba(108,255,138,.35)';
+      } else {
+        overlay.style.background = 'rgba(22,6,6,.88)';
+        card.style.borderColor    = 'rgba(255,107,107,.25)';
+      }
+    }, 320);
+  }
+
+  document.getElementById('btnGoalNext').onclick = ()=>{
+    stepIdx++;
+    // reset colors
+    overlay.style.background = 'rgba(6,10,22,.88)';
+    card.style.borderColor    = 'rgba(255,255,255,.14)';
+    showStep();
+  };
+
+  showStep();
+}
+
+/* Achievement queue flow */
+function showAchievementsQueue(list, afterDone){
+  if(!list.length){ afterDone(); return; }
+  const overlay = document.getElementById('achOverlay');
+  const achCard = document.getElementById('achCard');
+  let idx = 0;
+
+  function showOne(){
+    if(idx >= list.length){ overlay.style.display='none'; afterDone(); return; }
+    const a = list[idx];
+    document.getElementById('achBadge').textContent = a.icon;
+    document.getElementById('achName').textContent  = a.name;
+    document.getElementById('achDesc').textContent  = a.desc;
+    achCard.className = `achCard achBorder-${a.border}`;
+    achCard.style.animation = 'none';
+    void achCard.offsetWidth;
+    achCard.style.animation = '';
+    overlay.style.display = 'flex';
+  }
+
+  document.getElementById('btnAchNext').onclick = ()=>{ idx++; showOne(); };
+  showOne();
+}
+
+/* Post-season master flow */
+function runPostSeasonFlow(r){
+  const newAchs = checkNewAchievements(r);
+  showGoalRevealFlow(r, ()=>{
+    showAchievementsQueue(newAchs, ()=>{
+      renderResults();
+      showRatingRepDelta(r.ratingDelta, r.repDelta);
+      show(screenResults);
+      pillState.textContent = 'Sezon Sonu';
+    });
+  });
+}
+
+/* =========================
+   Achievement & League tab renderers
+========================= */
+function renderAchievementsTab(containerId){
+  const grid = document.getElementById(containerId);
+  if(!grid) return;
+  grid.innerHTML = "";
+  const earned = new Set(Career.earnedAchievements);
+  for(const a of ACHIEVEMENTS){
+    const div = document.createElement("div");
+    div.className = "ach-item " + (earned.has(a.id) ? "earned" : "locked");
+    div.innerHTML = `<span class="ach-icon2">${earned.has(a.id) ? a.icon : "🔒"}</span><div class="ach-nm2">${a.name}</div><div class="ach-desc2">${earned.has(a.id) ? a.desc : "?"}</div>`;
+    grid.appendChild(div);
+  }
+}
+
+function renderLeagueTab(){
+  const r = Career.lastResult;
+  const meta = document.getElementById("ligTabMeta");
+  const wrap = document.getElementById("ligTabWrap");
+  const body = document.getElementById("ligTabBody");
+  if(!r || !r.leagueTableRows){ meta.textContent = "Henüz sezon oynanmadı."; wrap.style.display="none"; return; }
+  meta.textContent = `${Career.league} • ${r.seasonDivision===1?"D1":"D2"} • Sezon ${Career.season-1}`;
+  wrap.style.display = "";
+  const champId = r.leagueChampionId;
+  const rel = new Set(r.leagueRelegatedIds||[]);
+  body.innerHTML = r.leagueTableRows.map((rw,i)=>{
+    const isMe = rw.id===Career.clubId;
+    const isChamp = rw.id===champId;
+    const isRel = rel.has(rw.id);
+    const cls = isMe?"me":isChamp?"champ":isRel?"rel":"";
+    const badge = isChamp?" 🏆":isRel?" ⬇️":"";
+    const meBadge = isMe?" <span style='color:var(--accent);font-size:10px'>▶ SEN</span>":"";
+    return `<tr class="${cls}"><td class="pos-num">${i+1}</td><td>${rw.name}${badge}${meBadge}</td><td class="pts">${rw.points}</td><td class="str">${rw.strength}</td></tr>`;
+  }).join("");
+}
+
+/* =========================
+   Render Hub & Results & Summary
+========================= */
+function renderHub(){
+  refreshCareerClubFromClubList();
+  // sticky header player stats
+  document.getElementById("shAge").textContent      = Career.age;
+  document.getElementById("shRating").textContent   = Career.rating + (Career.memoryFlags.legendaryUnlocked ? "⭐" : "");
+  document.getElementById("shRep").textContent      = Career.rep;
+  document.getElementById("shSeason").textContent   = "S" + Career.season;
+  document.getElementById("shFollowers").textContent= fmtFollowers(Career.followers);
+  document.getElementById("shPlayer").classList.add("on");
+  document.getElementById("vName").textContent = Career.name;
+  document.getElementById("vNationPos").textContent = `${Career.nation} • ${Career.pos}`;
+  document.getElementById("vAgeSeason").textContent = `${Career.age} • Sezon ${Career.season}`;
+  document.getElementById("vClub").textContent = `${Career.clubName} (${Career.league}) • Güç ${Career.clubStrength}`;
+  document.getElementById("vDivision").textContent = leagueLabel(Career.division);
+  const legendStar = Career.memoryFlags.legendaryUnlocked ? " ⭐" : "";
+  document.getElementById("vRating").textContent = Career.rating + legendStar;
+  document.getElementById("vRep").textContent = Career.rep;
+  document.getElementById("barRating").style.width = clamp((Career.rating - 50) / 49 * 100, 0, 100) + "%";
+  document.getElementById("barRep").style.width = clamp(Career.rep, 0, 100) + "%";
+  // delta badges — set by showRatingRepDelta(), cleared on next renderHub call without delta
+  if(!renderHub._skipDeltaClear){ document.getElementById("dRating").textContent=""; document.getElementById("dRep").textContent=""; }
+  renderHub._skipDeltaClear = false;
+  document.getElementById("vFollowers").textContent = `${fmtFollowers(Career.followers)} (peak ${fmtFollowers(Career.peakFollowers)})`;
+  document.getElementById("vValueWage").textContent = `${fmtMoneyM(Career.valueM)} • ${Career.wageK}K`;
+  document.getElementById("vContract").textContent = `${Career.contractYearsLeft} yıl`;
+  document.getElementById("vGoalsText").textContent = `Kulüp: ${Career.clubGoal.label} | Kişisel: ${Career.personalGoal.label}`;
+
+  document.getElementById("vGoals").textContent = Career.goals;
+  document.getElementById("vAssists").textContent = Career.assists;
+  document.getElementById("vLeagueTitles").textContent = Career.leagueTitles;
+  document.getElementById("vIntlTitles").textContent = Career.intlTitles;
+
+  const ret = retirementChanceByAge(Career.age);
+  const footBits = [
+    Career.memoryFlags.clubLegend ? "⭐ Kulüp Efsanesi" : null,
+    Career.justRelegated ? "⚠ Küme düştük" : null,
+    Career.justPromoted ? "🔥 Üst lige çıktık" : null,
+    Career.memoryFlags.legendaryUnlocked ? "🔓 99 kilidi açıldı (çok nadir)" : null,
+    `Emeklilik ihtimali: %${ret}`
+  ].filter(Boolean).join(" • ");
+  document.getElementById("hubFoot").textContent = footBits || "—";
+
+  renderOffers();
+}
+
+function showRatingRepDelta(rDelta, repDelta){
+  const fmt = (v) => v > 0 ? `+${v}` : `${v}`;
+  const cls = (v) => v > 0 ? "pos" : "neg";
+  const dR = document.getElementById("dRating");
+  const dP = document.getElementById("dRep");
+  if(rDelta !== 0){ dR.textContent = fmt(rDelta); dR.className = `kv-delta ${cls(rDelta)}`; }
+  if(repDelta !== 0){ dP.textContent = fmt(repDelta); dP.className = `kv-delta ${cls(repDelta)}`; }
+  renderHub._skipDeltaClear = true;
+}
+
+function renderResults(){
+  const r = Career.lastResult;
+
+  // reset tabs to Özet
+  switchResTab("resTabOzet");
+
+  document.getElementById("resHeader").textContent = `${Career.clubName} • Sezon ${Career.season} • Yaş ${Career.age} • Rol: ${Career.role}`;
+  document.getElementById("rClub").textContent = `${Career.clubName} (${Career.clubStrength})`;
+  document.getElementById("rDivision").textContent = leagueLabel(getClubById(Career.clubId).division);
+  document.getElementById("rLeagueFinish").textContent = `${r.leagueFinish}. sıra / 18` + (r.wonLeague ? " 🏆" : "");
+  document.getElementById("rMatches").textContent = r.matches;
+
+  document.getElementById("rGoalsRank").textContent = `${r.goals} gol  (ligde ${r.goalRank}.)`;
+  document.getElementById("rAssistsRank").textContent = `${r.assists} asist  (ligde ${r.astRank}.)`;
+
+  document.getElementById("rClubGoal").textContent = r.clubGoalMet ? `✅ ${Career.clubGoal.label}` : `❌ ${Career.clubGoal.label}`;
+  document.getElementById("rPersonalGoal").textContent = r.personalGoalMet ? `✅ ${Career.personalGoal.label}` : `❌ ${Career.personalGoal.label}`;
+
+  const fmtD = v => v >= 0 ? `+${v}` : `${v}`;
+  document.getElementById("rRatingDelta").textContent = fmtD(r.ratingDelta);
+  document.getElementById("rRatingDelta").style.color = r.ratingDelta >= 0 ? "var(--good)" : "var(--bad)";
+  document.getElementById("rRepDelta").textContent = fmtD(r.repDelta);
+  document.getElementById("rRepDelta").style.color = r.repDelta >= 0 ? "var(--good)" : "var(--bad)";
+
+  // league event banner
+  const banner = document.getElementById("rLeagueEventBanner");
+  if(r.leagueEvent==="RELEGATED"){
+    banner.textContent = "⬇ KÜME DÜŞÜLDÜ — D1 → D2";
+    banner.style.background = "rgba(255,107,107,.12)"; banner.style.borderColor = "rgba(255,107,107,.35)";
+    banner.classList.remove("hidden");
+  } else if(r.leagueEvent==="PROMOTED"){
+    banner.textContent = "⬆ TERFI — D2 → D1";
+    banner.style.background = "rgba(108,255,138,.10)"; banner.style.borderColor = "rgba(108,255,138,.30)";
+    banner.classList.remove("hidden");
+  } else if(r.wonLeague){
+    banner.textContent = "🏆 LİG ŞAMPİYONLUĞU";
+    banner.style.background = "rgba(255,211,110,.10)"; banner.style.borderColor = "rgba(255,211,110,.35)";
+    banner.classList.remove("hidden");
+  } else {
+    banner.classList.add("hidden");
+  }
+
+  // Detay tab
+  document.getElementById("rPerf").textContent = r.perfScore;
+  const vd = r.valueDelta >= 0 ? `+€${r.valueDelta}M` : `-€${Math.abs(r.valueDelta)}M`;
+  const fd = r.followersDelta >= 0 ? `+${fmtFollowers(r.followersDelta)}` : `-${fmtFollowers(Math.abs(r.followersDelta))}`;
+  document.getElementById("rFollowers").textContent = fd;
+  document.getElementById("rValue").textContent = vd;
+  document.getElementById("rCash").textContent = `+€${r.seasonCashM.toFixed(1)}M`;
+  document.getElementById("rSeasonFlavor").textContent =
+    (r.seasonFlavor==="GOLDEN" ? "GOLDEN 🔥" : r.seasonFlavor==="DRY" ? "DRY 🥶" : "NORMAL") + (r.miracleSeason ? " • MUCİZE ✨" : "");
+  document.getElementById("rCritical").textContent = r.criticalSeason ? "EVET ⚡" : "Hayır";
+  const le = r.leagueEvent==="RELEGATED" ? "⬇ Küme düştü (17-18)" :
+             r.leagueEvent==="PROMOTED"  ? "⬆ Terfi etti (1-2)"   : "—";
+  document.getElementById("rLeagueEvent").textContent = le;
+  document.getElementById("rRatingRep").textContent = `${fmtD(r.ratingDelta)} / ${fmtD(r.repDelta)}`;
+  document.getElementById("rDiceSummary").textContent = r.diceSum || "—";
+  document.getElementById("rLegendary").textContent = r.legendaryText || "—";
+
+  // Sosyal tab
+  document.getElementById("rTweets").textContent = genTweets(r);
+  document.getElementById("rEvent").textContent = genSeasonNarrative(r);
+}
+
+function countUp(el, target, duration, fmtFn){
+  if(!el) return;
+  fmtFn = fmtFn || (v=>String(v));
+  const start = performance.now();
+  const step = (now)=>{
+    const p = Math.min((now-start)/duration, 1);
+    const eased = 1 - Math.pow(1-p, 3);
+    el.textContent = fmtFn(Math.round(target * eased));
+    if(p < 1) requestAnimationFrame(step);
+    else el.textContent = fmtFn(target);
+  };
+  requestAnimationFrame(step);
+}
+
+function renderSummary(){
+  switchSumTab("sumTabKariyer");
+
+  const t = tier(Career.score);
+  const tierEmoji = t==="GOAT"?"🐐":t==="Altın"?"🥇":t==="Gümüş"?"🥈":"🥉";
+
+  document.getElementById("sHeroBadge").textContent = tierEmoji;
+  document.getElementById("sHeroTier").textContent  = `${t} Kariyer`;
+  document.getElementById("sHeroName").textContent  = Career.name;
+  document.getElementById("sHeroMeta").textContent  = `${Career.nation} • ${Career.pos} • ${Career.season-1} Sezon • Yaş ${Career.age}`;
+
+  // count-up animations
+  const D = 1100;
+  countUp(document.getElementById("sGoals"),        Career.goals,                   D);
+  countUp(document.getElementById("sAssists"),      Career.assists,                 D+80);
+  countUp(document.getElementById("sLeague"),       Career.leagueTitles,            D+160);
+  countUp(document.getElementById("sIntl"),         Career.intlTitles,              D+240);
+  countUp(document.getElementById("sRetireRating"), Career.rating,                  D+320);
+  countUp(document.getElementById("sPeakRating"),   Career.peakRating||Career.rating, D+340);
+  countUp(document.getElementById("sRep"),          Career.rep,                     D+400);
+  countUp(document.getElementById("sCash"),         Math.round(Career.cashM*10)/10, D+480, v=>"€"+v+"M");
+  countUp(document.getElementById("sScore"),        Career.score,                   D+560);
+  document.getElementById("sPeakFollowers").textContent = fmtFollowers(Career.peakFollowers);
+  document.getElementById("sPeakValue").textContent     = fmtMoneyM(Career.peakValueM);
+  document.getElementById("sFollowers").textContent     = fmtFollowers(Career.followers);
+
+  // Gecmis tab
+  if(Career.bestSeason){
+    const b = Career.bestSeason;
+    document.getElementById("sBestSeason").textContent =
+      `Sezon ${b.season} (Yaş ${b.age})\n`+
+      `${b.club} • ${leagueLabel(b.division)}\n`+
+      `Gol: ${b.goals}  Asist: ${b.assists}\n`+
+      `PerfScore: ${b.perfScore}\n`+
+      `Lig: ${b.finish}. sıra\n`+
+      `RatingDelta: ${b.ratingDelta>=0?"+":""}${b.ratingDelta}  RepDelta: ${b.repDelta>=0?"+":""}${b.repDelta}\n`+
+      `Hedef: ${b.clubGoalMet?"✅":"❌"}  Kişisel: ${b.personalGoalMet?"✅":"❌"}\n`+
+      `Tip: ${b.seasonFlavor}${b.breakout!=="NONE"?" • "+b.breakout:""}${b.criticalSeason?" • KRİTİK":""}`;
+  } else {
+    document.getElementById("sBestSeason").textContent = "—";
+  }
+
+  const last = Career.clubHistory.slice(-10).reverse();
+  document.getElementById("sClubHistory").textContent =
+    last.length ? last.map(x=>`Sezon ${x.season} • ${x.club} • ${leagueLabel(x.division)} • Rol:${x.role}`).join("\n") : "—";
+
+  const mem = [];
+  if(Career.memoryFlags.clubLegend)        mem.push("⭐ 5+ sezon aynı kulüp (Kulüp Efsanesi)");
+  if(Career.memoryFlags.cameBackUp)        mem.push("🔁 Küme düşüp aynı kulüpte geri çıktın");
+  if(Career.memoryFlags.promotedCaptain)   mem.push("🧢 Çıkışta liderlik etkisi");
+  if(Career.memoryFlags.wonTrophyAfter30)  mem.push("🏆 30+ yaşta kupa kazandın");
+  if(Career.memoryFlags.legendaryUnlocked) mem.push("🔓 Legendary Growth — 99 yolu açıldı");
+  document.getElementById("sMemory").textContent = mem.length ? mem.join("\n") : "—";
+
+  // Basarimlar tab
+  renderAchievementsTab("sumAchGrid");
+}
+
+/* =========================
+   Play Season / Next Season
+========================= */
+document.getElementById("btnPlaySeason").onclick = ()=>{
+  // sezon sim: loader -> zar olayları (1..5) -> core sim -> results
+  showLoader("Sezon simüle ediliyor…", "Ön hazırlık yapılıyor…");
+  setTimeout(()=>{
+    hideLoader();
+
+    runDiceEventsFlow(5, (dicePack)=>{
+      showLoader("Lig hesaplanıyor…", "Skorlar ve tablolar oluşuyor…");
+      setTimeout(()=>{
+        hideLoader();
+        try{
+          simulateSeasonCore(dicePack);
+        runPostSeasonFlow(Career.lastResult);
+        } catch(err){
+          console.error(err);
+          openModal({
+            title:"Hata",
+            desc:"Bir şey patladı. Aşağıdaki hata metnini bana atarsan 10 dakikada temizlerim.",
+            stepIndex:0, stepsTotal:1,
+            foot:"Debug",
+            revealLabel:"DETAY",
+            nextLabel:"KAPAT",
+            initialOutcome:"Hata oluştu. Detay için bak…",
+            revealFn: ()=> (err && (err.stack||err.message)) ? String(err.stack||err.message) : "Bilinmeyen hata",
+            nextFn: ()=>{}
+          });
+        }
+      }, 900);
+    });
+
+  }, 700);
+};
+
+document.getElementById("btnNextSeason").onclick = ()=>{
+  if(rollRetirementNextSeason()){
+    Career.retired = true;
+    clearSave();
+    addCareerToLb();
+    renderSummary();
+    show(screenSummary);
+    pillState.textContent="Emeklilik";
+    return;
+  }
+
+  Career.contractYearsLeft = Math.max(0, Career.contractYearsLeft - 1);
+  Career._adaptThisSeason = false;
+  Career.age += 1;
+  Career.season += 1;
+
+  Career.clubNeedMoney = clamp(Career.clubNeedMoney + rnd(-6,10), 0, 100);
+
+  refreshCareerClubFromClubList();
+  applyRatingCaps();
+
+  makeOffers();
+  document.getElementById("btnPlaySeason").disabled = true;
+  document.getElementById("hint").textContent = "Teklif seçmeden sezon oynayamazsın.";
+  show(screenGame);
+  pillState.textContent="Sezon Merkezi";
+  renderHub();
+};
+
+/* =========================
+   Tab switching
+========================= */
+function switchTab(tabId){
+  document.querySelectorAll('#screenGame .tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#screenGame .tab-btn').forEach(b=>b.classList.remove('active'));
+  const content = document.getElementById(tabId);
+  if(content) content.classList.add('active');
+  const btn = document.querySelector(`#screenGame .tab-btn[data-tab="${tabId}"]`);
+  if(btn) btn.classList.add('active');
+  if(tabId==="tabAch") renderAchievementsTab("achGrid");
+  if(tabId==="tabLig") renderLeagueTab();
+}
+
+function switchResTab(tabId){
+  document.querySelectorAll('#screenResults .tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#screenResults .tab-btn').forEach(b=>b.classList.remove('active'));
+  const content = document.getElementById(tabId);
+  if(content) content.classList.add('active');
+  const btn = document.querySelector(`#screenResults .tab-btn[data-res-tab="${tabId}"]`);
+  if(btn) btn.classList.add('active');
+}
+
+function switchSumTab(tabId){
+  document.querySelectorAll('#screenSummary .tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#screenSummary .tab-btn').forEach(b=>b.classList.remove('active'));
+  const content = document.getElementById(tabId);
+  if(content) content.classList.add('active');
+  const btn = document.querySelector(`#screenSummary .tab-btn[data-sum-tab="${tabId}"]`);
+  if(btn) btn.classList.add('active');
+}
+
+document.addEventListener('click', e=>{
+  const btn = e.target.closest('.tab-btn');
+  if(!btn) return;
+  if(btn.dataset.tab)    switchTab(btn.dataset.tab);
+  if(btn.dataset.resTab) switchResTab(btn.dataset.resTab);
+  if(btn.dataset.sumTab) switchSumTab(btn.dataset.sumTab);
+});
+
+/* =========================
+   Initial UI
+========================= */
+window.addEventListener('beforeunload', saveGame);
+resetCareer();
+checkContinue();
+renderLb();
+show(screenMain);
+pillState.textContent="Menü";
+</script>
+</body>
+</html>
