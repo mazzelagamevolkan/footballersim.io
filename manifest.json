@@ -2,7 +2,7 @@
   "name": "FootballerSim",
   "short_name": "FootballerSim",
   "description": "FootballerSim",
-  "start_url": "/game.html",
+  "start_url": "/footballersim.io/game.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
