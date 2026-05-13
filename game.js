@@ -12,23 +12,36 @@ const SFX = {
 };
 
 let _bgmStarted = false;
+let _bgmVolume = parseInt(localStorage.getItem('bgmVol') || '18') / 100;
+let _sfxVolume = parseInt(localStorage.getItem('sfxVol') || '50') / 100;
+
+window.setBgmVolume = function(v){
+  _bgmVolume = Math.max(0, Math.min(1, v));
+  const bgm = SFX.bgm();
+  if(bgm) bgm.volume = _bgmVolume;
+};
+
+window.setSfxVolume = function(v){
+  _sfxVolume = Math.max(0, Math.min(1, v));
+};
 
 function playSound(key, vol){
   try{
     const el = SFX[key]?.();
     if(!el) return;
-    el.volume = vol ?? 1.0;
+    el.volume = (vol ?? 1.0) * _sfxVolume;
     el.currentTime = 0;
     el.play().catch(()=>{});
   } catch(_){}
 }
 
 function startBgm(){
-  if(_bgmStarted) return;
-  _bgmStarted = true;
   const el = SFX.bgm();
   if(!el) return;
-  el.volume = 0.08;
+  el.volume = _bgmVolume;
+  if(_bgmStarted) return;
+  _bgmStarted = true;
+  el.loop = true;
   el.play().catch(()=>{});
 }
 
@@ -37,7 +50,6 @@ function stopBgm(){
   _bgmStarted = false;
 }
 
-// Tüm butonlarda click sesi — kullanıcı etkileşimi BGM'i de başlatır
 document.addEventListener('click', e=>{
   startBgm();
   if(e.target.closest('.tab-btn')){
