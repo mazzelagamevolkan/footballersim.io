@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Penaltı Arcade Mini Game</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#050914;color:white;font-family:Arial,Helvetica,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:hidden}
+#gameWrap{width:min(100vw,520px);height:100vh;max-height:920px;position:relative;background:#07101f;overflow:hidden;border-left:1px solid #1e4968;border-right:1px solid #1e4968}
+canvas{width:100%;height:100%;display:block}
+.topbar{position:absolute;top:0;left:0;right:0;height:76px;background:linear-gradient(#07101f,#07101fdd);z-index:10;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #18314c}
+.pause{width:50px;height:50px;border:2px solid #2e8fca;border-radius:10px;background:#0b1830;color:white;font-size:27px;font-weight:900;box-shadow:0 0 14px #00bfff44}
+.score{position:absolute;left:50%;top:11px;transform:translateX(-50%);height:58px;min-width:250px;border:2px solid #1e7fb3;border-radius:12px;background:#111a2bcc;display:flex;align-items:center;justify-content:center;gap:14px;box-shadow:0 0 18px #00bfff28}
+.team{font-size:13px;color:#a9bdd4;font-weight:900}
+.scoreNum{font-size:38px;font-weight:1000;letter-spacing:3px}
+.minute{position:absolute;left:50%;top:58px;transform:translateX(-50%);background:#0e1728;border:2px solid #1e7fb3;border-radius:7px;padding:4px 18px;font-weight:900;font-size:16px;z-index:11}
+.coin{height:44px;min-width:98px;padding:0 12px;border:2px solid #1e7fb3;border-radius:10px;background:#0e1728;display:flex;align-items:center;gap:8px;justify-content:center;font-weight:900}
+.badge{position:absolute;top:89px;left:50%;transform:translateX(-50%);z-index:9;background:#10182bcc;border:2px solid #284d79;border-radius:11px;color:#ffcc30;font-size:24px;font-weight:1000;padding:8px 34px;box-shadow:0 0 16px #000}
+.statbox{position:absolute;left:16px;bottom:232px;width:150px;padding:10px 12px;background:#092033dd;border:2px solid #1979aa;border-radius:10px;z-index:9;box-shadow:0 0 18px #00c8ff33}
+.stat{font-size:14px;font-weight:900;color:#bdefff;margin:7px 0}
+.meter{height:7px;background:#182536;border-radius:10px;margin-top:4px;overflow:hidden}
+.meter span{display:block;height:100%;background:linear-gradient(90deg,#50ff85,#b6ff38)}
+.powerWrap{position:absolute;left:50%;bottom:142px;transform:translateX(-50%);width:76%;height:52px;background:#101722;border:4px solid #d6d9df;border-radius:22px;padding:8px;z-index:9;box-shadow:0 0 18px #00d9ff44}
+.powerLabel{position:absolute;left:50%;top:-32px;transform:translateX(-50%);background:#101722;color:white;font-weight:1000;padding:4px 24px;border-radius:8px;border:2px solid #2d4050}
+.powerFill{height:100%;border-radius:14px;background:linear-gradient(90deg,#e63030 0%,#ff8e18 32%,#ffea30 55%,#42d73b 74%,#0b111c 75%);width:0%}
+.marker{position:absolute;top:4px;width:5px;height:44px;background:white;border-radius:4px;box-shadow:0 0 9px #fff}
+.shootBtn{position:absolute;left:50%;bottom:54px;transform:translateX(-50%);height:72px;width:205px;border-radius:18px;border:3px solid #4beeff;background:linear-gradient(#124b61,#071522);color:#bffaff;font-size:29px;font-weight:1000;z-index:9;box-shadow:0 0 28px #00e5ffcc;text-shadow:0 3px #05202d}
+.sideBtn{position:absolute;bottom:66px;width:76px;height:76px;border-radius:12px;border:2px solid #246e9d;background:#0d1826;color:#dbeeff;font-weight:900;z-index:9;box-shadow:0 0 18px #00bfff44}
+.sideBtn.left{left:66px}.sideBtn.right{right:66px}
+.tutorial{position:absolute;right:14px;top:86px;width:36%;min-width:185px;background:#06111ddd;border:2px solid #1f8fc0;border-radius:12px;padding:15px 12px;z-index:12;box-shadow:0 0 20px #00c8ff30}
+.tutorial h2{margin:0 0 13px;color:#55f3ff;text-align:center;font-size:20px}
+.tutorial p{margin:8px 0;font-size:13px;line-height:1.35;font-weight:800}
+.tutorial button{width:100%;margin-top:12px;height:50px;border-radius:10px;border:2px solid #75ff68;background:#178a20;color:white;font-size:20px;font-weight:1000;box-shadow:0 0 18px #2cff5f88}
+.resultOverlay{position:absolute;inset:0;background:linear-gradient(#00000022,#000000bb);z-index:20;display:none;align-items:flex-end;justify-content:center;padding:0 18px 96px}
+.resultCard{width:100%;background:#07111dcc;border:2px solid #1e8fc5;border-radius:16px;padding:18px;text-align:center;box-shadow:0 0 24px #00d9ff55}
+.bigText{font-size:46px;font-weight:1000;text-shadow:0 5px #000,0 0 20px #fff;margin-bottom:6px}
+.subText{font-size:18px;font-weight:1000;color:#56eaff}
+.reward{margin:16px auto 18px;background:#071c18;border-radius:10px;padding:12px;font-size:18px;font-weight:900;width:80%}
+.continue{height:54px;width:190px;border-radius:10px;border:2px solid #38dfff;background:#0b2437;color:#7ef4ff;font-size:21px;font-weight:1000}
+.bottomNav{position:absolute;left:0;right:0;bottom:0;height:44px;background:#06101d;display:flex;z-index:15;border-top:1px solid #1b3550}
+.bottomNav div{flex:1;text-align:center;color:#7f92aa;font-size:12px;font-weight:900;padding-top:6px}
+.bottomNav .active{color:#ffcc30;border-top:2px solid #ffcc30;background:#101728}
+@media(max-width:420px){.tutorial{display:none}.statbox{bottom:220px;width:130px}.sideBtn.left{left:24px}.sideBtn.right{right:24px}.score{min-width:210px}.coin{min-width:74px;font-size:13px}}
+</style>
+</head>
+<body>
+<div id="gameWrap">
+<canvas id="game"></canvas>
+
+<div class="topbar">
+<button class="pause">Ⅱ</button>
+<div class="score"><span class="team">KRİTİK AN</span></div>
+<div class="minute">90:00 <span style="color:#ff5b68">+2</span></div>
+<div class="coin">🧑‍🧑‍🧒‍🧒 <span id="coins">11250</span></div>
+</div>
+
+<div class="badge">PENALTI!</div>
+
+<div class="statbox">
+<div class="stat">GÜÇ <b style="float:right" id="pwrTxt">85</b><div class="meter"><span style="width:65%"></span></div></div>
+<div class="stat">FALSO <b style="float:right">78</b><div class="meter"><span style="width:58%"></span></div></div>
+<div class="stat">İSABET <b style="float:right">90</b><div class="meter"><span style="width:86%"></span></div></div>
+</div>
+
+<div class="tutorial" id="tutorial">
+<h2>NASIL OYNANIR?</h2>
+<p>1. GÜCÜ AYARLA</p>
+<p>2. YÖN BELİRLE<br><span style="color:#58efff">Parmağını sürükle</span></p>
+<p>3. FALSO VER<br><span style="color:#58efff">Şuttan sonra hızlı swipe!</span></p>
+<p>4. GOLÜ AT!<br><span style="color:#58efff">Kaleciyi geç!</span></p>
+<button onclick="document.getElementById('tutorial').style.display='none'">TAMAM</button>
+</div>
+
+<button class="sideBtn left">⚡<br>x2</button>
+<button class="sideBtn right">⚽<br>FALSO</button>
+
+<div class="powerWrap">
+<div class="powerLabel">GÜÇ</div>
+<div class="powerFill" id="powerFill"></div>
+<div class="marker" id="marker"></div>
+</div>
+<button class="shootBtn" id="shootBtn">⚽ ŞUT!</button>
+
+<div class="resultOverlay" id="resultOverlay">
+<div class="resultCard">
+<div class="bigText" id="resultText">GOOOL!</div>
+<div class="subText" id="resultSub">TOP CORNER!</div>
+<div class="reward" id="reward">+150 🪙</div>
+<button class="continue" onclick="sendMiniGameResult()">DEVAM ET</button>
+</div>
+</div>
+
+<script>
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d"),wrap=document.getElementById("gameWrap");
+let W,H,DPR;
+function resize(){DPR=Math.min(devicePixelRatio||1,2);W=wrap.clientWidth;H=wrap.clientHeight;canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0)}
+addEventListener("resize",resize);resize();
+
+const powerFill=document.getElementById("powerFill"),marker=document.getElementById("marker"),shootBtn=document.getElementById("shootBtn");
+const resultOverlay=document.getElementById("resultOverlay"),resultText=document.getElementById("resultText"),resultSub=document.getElementById("resultSub"),reward=document.getElementById("reward");
+let lastMiniResult=null;
+let state="aim",power=.62,powerDir=1,aim={x:.78,y:.31},drag=false,shake=0,coins=1250;
+
+const goal={x:0,y:0,w:0,h:0,post:8,net:0};
+const ball={x:0,y:0,vx:0,vy:0,r:10,curve:0,spin:0,rot:0,moving:false,trail:[],startX:0,startY:0,targetX:0,targetY:0,flightT:0,flightSpeed:1.35,arc:95,drawX:0,drawY:0,drawR:10};
+const keeper={x:0,y:0,baseX:0,baseY:0,w:42,h:74,targetX:0,targetY:0,timer:0,reaction:.24,intel:.62,dive:false,prog:0,dir:"center"};
+
+function layout(){
+ goal.w=W*.72; goal.h=H*.17; goal.x=(W-goal.w)/2; goal.y=H*.215;
+ keeper.baseX=W/2; keeper.baseY=goal.y+goal.h*.62;
+ if(state==="aim"){keeper.x=keeper.baseX;keeper.y=keeper.baseY;ball.x=W/2+22;ball.y=H*.68}
+}
+function rand(a,b){return a+Math.random()*(b-a)}
+function lerp(a,b,t){return a+(b-a)*t}
+function ease(t){return 1-Math.pow(1-t,3)}
+
+function pointer(e){const r=canvas.getBoundingClientRect();const p=e.touches?e.touches[0]:e;return{x:p.clientX-r.left,y:p.clientY-r.top}}
+function setAim(p){aim.x=Math.max(goal.x+18,Math.min(goal.x+goal.w-18,p.x))/W;aim.y=Math.max(goal.y+18,Math.min(goal.y+goal.h-18,p.y))/H}
+canvas.addEventListener("pointerdown",e=>{if(state==="aim"){drag=true;setAim(pointer(e))}});
+canvas.addEventListener("pointermove",e=>{if(drag&&state==="aim")setAim(pointer(e))});
+canvas.addEventListener("pointerup",()=>drag=false);
+canvas.addEventListener("touchstart",e=>{if(state==="aim"){drag=true;setAim(pointer(e));e.preventDefault()}},{passive:false});
+canvas.addEventListener("touchmove",e=>{if(drag&&state==="aim"){setAim(pointer(e));e.preventDefault()}},{passive:false});
+canvas.addEventListener("touchend",()=>drag=false);
+
+shootBtn.onclick=shoot;
+function quality(){if(power>.62&&power<.78)return"perfect";if(power>.42&&power<.9)return"good";return"bad"}
+function shoot(){
+ if(state!=="aim")return;
+ state="shot";resultOverlay.style.display="none";
+ const q=quality(),spread=q==="perfect"?5:q==="good"?18:42;
+ let tx=aim.x*W+rand(-spread,spread),ty=aim.y*H+rand(-spread,spread);
+
+ ball.startX=ball.x;
+ ball.startY=ball.y;
+ ball.targetX=tx;
+ ball.targetY=ty;
+ ball.flightT=0;
+ ball.flightSpeed=1.10 + power*.95 + (q==="perfect"?.15:0);
+ ball.arc=70 + power*90;
+ ball.curve=rand(-35,35) * (q==="perfect"?.45:q==="good"?.8:1.25);
+ ball.spin=rand(-.45,.45);
+ ball.moving=true;
+ ball.trail=[];
+ ball.drawX=ball.x;
+ ball.drawY=ball.y;
+
+ decideKeeper(tx,ty);keeper.timer=0;keeper.prog=0;keeper.dive=false;shake=4;
+}
+function decideKeeper(tx,ty){
+ const correct=Math.random()<keeper.intel;let dir;
+ if(correct){const left=tx<goal.x+goal.w*.42,right=tx>goal.x+goal.w*.58,top=ty<goal.y+goal.h*.45;dir=left&&top?"topLeft":right&&top?"topRight":left?"lowLeft":right?"lowRight":"center"}
+ else{let d=["left","right","center","topLeft","topRight","lowLeft","lowRight"];dir=d[Math.floor(Math.random()*d.length)]}
+ keeper.dir=dir;
+ const m={left:[goal.x+goal.w*.24,goal.y+goal.h*.62],right:[goal.x+goal.w*.76,goal.y+goal.h*.62],center:[goal.x+goal.w*.5,goal.y+goal.h*.62],topLeft:[goal.x+goal.w*.22,goal.y+goal.h*.27],topRight:[goal.x+goal.w*.78,goal.y+goal.h*.27],lowLeft:[goal.x+goal.w*.22,goal.y+goal.h*.74],lowRight:[goal.x+goal.w*.78,goal.y+goal.h*.74]};
+ [keeper.targetX,keeper.targetY]=m[dir];
+}
+function updateKeeper(dt){
+ keeper.timer+=dt;if(keeper.timer<keeper.reaction)return;
+ keeper.dive=true;keeper.prog=Math.min(1,keeper.prog+dt*3.6);
+ let t=ease(keeper.prog);keeper.x=lerp(keeper.baseX,keeper.targetX,t);keeper.y=lerp(keeper.baseY,keeper.targetY,t);
+}
+function circleRect(c,r){
+ const rx=r.x-r.w/2-15,ry=r.y-r.h/2-15,rw=r.w+30,rh=r.h+30;
+ const cx=Math.max(rx,Math.min(c.x,rx+rw)),cy=Math.max(ry,Math.min(c.y,ry+rh));
+ return Math.hypot(c.x-cx,c.y-cy)<c.r+2;
+}
+function checkResult(){
+ // Result is calculated only after the ball completes its flight.
+ // This prevents early "AUT" while the ball is still travelling.
+ const finalBall={x:ball.targetX,y:ball.targetY,r:ball.r};
+
+ if(circleRect(finalBall,keeper))return"save";
+
+ const hitLeftPost=Math.abs(finalBall.x-goal.x)<14 && finalBall.y>goal.y-4 && finalBall.y<goal.y+goal.h+4;
+ const hitRightPost=Math.abs(finalBall.x-(goal.x+goal.w))<14 && finalBall.y>goal.y-4 && finalBall.y<goal.y+goal.h+4;
+ const hitCrossbar=Math.abs(finalBall.y-goal.y)<14 && finalBall.x>goal.x && finalBall.x<goal.x+goal.w;
+
+ if((hitLeftPost||hitRightPost||hitCrossbar) && Math.random()<.75)return"post";
+
+ if(finalBall.x>goal.x+10 && finalBall.x<goal.x+goal.w-10 && finalBall.y>goal.y+8 && finalBall.y<goal.y+goal.h-8)return"goal";
+
+ return"out";
+}
+
+function buildMiniGameResult(r){
+  const ok = r==="goal";
+  const labels = {goal:"Penalty Goal", save:"Saved", post:"Post", out:"Out"};
+  return {
+    source:"career-mini-game",
+    type:"penalty",
+    result:r,
+    success:ok,
+    label:labels[r] || "Penalty",
+    ratingDelta: ok ? 0.5 : -1.5
+  };
+}
+function sendMiniGameResult(){
+  window.parent.postMessage(lastMiniResult || buildMiniGameResult("out"), "*");
+}
+
+function finish(r){
+ lastMiniResult=buildMiniGameResult(r);
+ state="result";ball.moving=false;
+ if(r==="goal"){resultText.textContent="GOOOOL!";resultText.style.color="#ffd936";resultSub.textContent=quality()==="perfect"?"TOP CORNER!":"GOL!";reward.textContent="+150 🪙  +10 REP";coins+=150;goal.net=22;shake=12}
+ if(r==="save"){resultText.textContent="KURTARDI!";resultText.style.color="#ff4f7d";resultSub.textContent="DAHA İYİSİNİ YAPABİLİRSİN!";reward.textContent="REPUTATION -10  MORAL -5";shake=8}
+ if(r==="post"){resultText.textContent="DİREK!";resultText.style.color="#ffb42c";resultSub.textContent="ÇOK YAKINDI!";reward.textContent="İSABET +1";shake=10}
+ if(r==="out"){resultText.textContent="AUT!";resultText.style.color="#ddd";resultSub.textContent="GÜCÜ KONTROL ET!";reward.textContent="MORAL -3";shake=5}
+ document.getElementById("coins").textContent=coins;
+ setTimeout(()=>resultOverlay.style.display="flex",450);
+}
+function resetRound(){state="aim";aim={x:.78,y:.31};ball.moving=false;ball.trail=[];ball.flightT=0;ball.drawX=ball.x;ball.drawY=ball.y;keeper.dive=false;keeper.prog=0;goal.net=0;resultOverlay.style.display="none"}
+
+function update(dt){
+ layout();
+ if(state==="aim"){power+=powerDir*dt*.85;if(power>1){power=1;powerDir=-1}if(power<0){power=0;powerDir=1}}
+ powerFill.style.width=(power*100)+"%";marker.style.left=(power*100)+"%";document.getElementById("pwrTxt").textContent=Math.round(50+power*50);
+ if(state==="shot"){
+  updateKeeper(dt);
+  ball.flightT=Math.min(1,ball.flightT+dt*ball.flightSpeed);
+  const t=ball.flightT;
+  const easeT=1-Math.pow(1-t,2);
+  const arcY=Math.sin(Math.PI*t)*ball.arc;
+  const curveX=Math.sin(Math.PI*t)*ball.curve;
+
+  ball.x=lerp(ball.startX,ball.targetX,easeT)+curveX;
+  ball.y=lerp(ball.startY,ball.targetY,easeT);
+  ball.drawX=ball.x;
+  ball.drawY=ball.y-arcY;
+  ball.drawR=lerp(12,8,t);
+  ball.rot+=ball.spin*dt*60;
+
+  ball.trail.push({x:ball.drawX,y:ball.drawY});
+  if(ball.trail.length>18)ball.trail.shift();
+
+  if(t>=1){
+    const r=checkResult();
+    if(r)finish(r);
+  }
+}
+ shake*=.88;goal.net*=.86;
+}
+
+function drawField(){
+ let g=ctx.createLinearGradient(0,70,0,H);g.addColorStop(0,"#0f4821");g.addColorStop(1,"#093416");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ for(let i=0;i<10;i++){ctx.fillStyle=i%2?"rgba(255,255,255,.035)":"rgba(0,0,0,.05)";ctx.fillRect(0,76+i*80,W,80)}
+ ctx.fillStyle="#090922";ctx.fillRect(0,76,W,130);
+ for(let i=0;i<115;i++){let colors=["#ff4ee2","#2df06c","#4d7cff","#ffe95b","#ff9143","#9b56ff","#40e4de"];ctx.fillStyle=colors[i%colors.length];ctx.beginPath();ctx.arc((i*19)%W,105+(i*31)%70,3,0,7);ctx.fill()}
+ ctx.strokeStyle="rgba(255,255,255,.52)";ctx.lineWidth=2;
+ ctx.beginPath();ctx.moveTo(goal.x-40,goal.y+goal.h+25);ctx.lineTo(0,H*.63);ctx.lineTo(0,H*.77);ctx.lineTo(W,H*.77);ctx.lineTo(W,H*.63);ctx.lineTo(goal.x+goal.w+40,goal.y+goal.h+25);ctx.stroke();
+ ctx.strokeRect(W*.28,goal.y+goal.h-8,W*.44,H*.105);
+}
+function drawGoal(){
+ ctx.save();ctx.translate(rand(-goal.net,goal.net),rand(-goal.net,goal.net));
+ ctx.fillStyle="#083b1b";ctx.fillRect(goal.x,goal.y,goal.w,goal.h);
+ ctx.strokeStyle="rgba(255,255,255,.18)";ctx.lineWidth=2;
+ for(let x=goal.x+18;x<goal.x+goal.w;x+=18){ctx.beginPath();ctx.moveTo(x,goal.y);ctx.lineTo(x,goal.y+goal.h);ctx.stroke()}
+ for(let y=goal.y+18;y<goal.y+goal.h;y+=18){ctx.beginPath();ctx.moveTo(goal.x,y);ctx.lineTo(goal.x+goal.w,y);ctx.stroke()}
+ ctx.strokeStyle="#f4f7f8";ctx.lineWidth=10;ctx.strokeRect(goal.x,goal.y,goal.w,goal.h);
+ ctx.strokeStyle="#bfcbd1";ctx.lineWidth=4;ctx.strokeRect(goal.x+6,goal.y+6,goal.w-12,goal.h-12);ctx.restore();
+}
+function drawTargets(){
+ [[.09,.18,"#ff4965"],[.91,.18,"#ffa726"],[.09,.68,"#249dff"],[.91,.68,"#249dff"]].forEach((p,i)=>{let x=goal.x+goal.w*p[0],y=goal.y+goal.h*p[1],s=1+Math.sin(performance.now()/220+i)*.12;ctx.shadowBlur=20;ctx.shadowColor=p[2];ctx.fillStyle=p[2];ctx.beginPath();ctx.arc(x,y,12*s,0,7);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle="white";ctx.lineWidth=2;ctx.stroke()})
+}
+function drawKeeper(){
+ ctx.save();ctx.translate(keeper.x,keeper.y+Math.sin(performance.now()/220)*2);if(keeper.dive)ctx.rotate(keeper.x<keeper.baseX?-.6:keeper.x>keeper.baseX?.6:0);
+ ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(0,48,30,7,0,0,7);ctx.fill();
+ ctx.fillStyle="#f7b400";ctx.fillRect(-13,-74,26,34);ctx.fillStyle="#ffc21b";ctx.fillRect(-22,-38,44,66);ctx.fillStyle="white";ctx.font="bold 23px Arial";ctx.textAlign="center";ctx.fillText("1",0,4);
+ ctx.fillStyle="white";ctx.fillRect(-34,-10,12,24);ctx.fillRect(22,-10,12,24);ctx.fillStyle="#f7b400";ctx.fillRect(-17,28,12,42);ctx.fillRect(5,28,12,42);ctx.restore();
+}
+function drawPlayer(){
+ let x=W*.42,y=H*.67;ctx.save();ctx.translate(x,y+Math.sin(performance.now()/260)*2);
+ ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(0,52,32,8,0,0,7);ctx.fill();
+ ctx.fillStyle="#8b3a17";ctx.fillRect(-18,-43,36,20);ctx.fillStyle="#ffd0a0";ctx.fillRect(-22,-25,44,36);
+ ctx.fillStyle="#dc6a20";ctx.fillRect(-25,12,50,52);ctx.fillStyle="#8d1a1f";ctx.fillRect(-4,12,8,52);
+ ctx.fillStyle="white";ctx.font="bold 20px Arial";ctx.fillText("10",0,45);
+ ctx.fillStyle="#ffd0a0";ctx.fillRect(-36,18,10,40);ctx.fillRect(26,18,10,40);
+ ctx.fillStyle="#d95b1e";ctx.fillRect(-22,64,16,35);ctx.fillRect(6,64,16,35);
+ ctx.fillStyle="#111";ctx.fillRect(-25,96,22,7);ctx.fillRect(3,96,22,7);ctx.restore();
+}
+function drawBall(){
+ const bx=ball.moving?ball.drawX:ball.x;
+ const by=ball.moving?ball.drawY:ball.y;
+ const br=ball.moving?ball.drawR:ball.r;
+
+ ball.trail.forEach((p,i)=>{
+   ctx.globalAlpha=i/ball.trail.length*.45;
+   ctx.fillStyle="white";
+   ctx.beginPath();
+   ctx.arc(p.x,p.y,br*i/ball.trail.length,0,7);
+   ctx.fill();
+ });
+ ctx.globalAlpha=1;
+
+ // ground shadow stays near the real ground path, ball is drawn above it
+ const shadowY=ball.moving?ball.y+14:ball.y+14;
+ ctx.fillStyle="rgba(0,0,0,.28)";
+ ctx.beginPath();
+ ctx.ellipse(bx,shadowY,16,5,0,0,7);
+ ctx.fill();
+
+ ctx.save();
+ ctx.translate(bx,by);
+ ctx.rotate(ball.rot);
+ ctx.fillStyle="white";
+ ctx.beginPath();
+ ctx.arc(0,0,br,0,7);
+ ctx.fill();
+ ctx.fillStyle="#111";
+ ctx.beginPath();
+ ctx.arc(0,0,br*.38,0,7);
+ ctx.fill();
+ ctx.restore();
+}
+function drawAim(){
+ if(state!=="aim")return;ctx.setLineDash([5,8]);ctx.strokeStyle="white";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(W*.47,H*.66);ctx.quadraticCurveTo(W*.55,H*.52,aim.x*W,aim.y*H);ctx.stroke();ctx.setLineDash([]);
+ ctx.fillStyle="white";ctx.beginPath();ctx.moveTo(aim.x*W,aim.y*H-12);ctx.lineTo(aim.x*W+17,aim.y*H+9);ctx.lineTo(aim.x*W-8,aim.y*H+6);ctx.fill();
+}
+function draw(){
+ ctx.clearRect(0,0,W,H);ctx.save();ctx.translate(rand(-shake,shake),rand(-shake,shake));
+ drawField();drawGoal();drawTargets();drawKeeper();drawAim();drawPlayer();drawBall();ctx.restore();
+}
+let last=performance.now();
+function loop(now){let dt=Math.min(.033,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

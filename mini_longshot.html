@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Free Kick</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#030712;color:#fff;font-family:Arial,Helvetica,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:hidden}
+#wrap{width:min(100vw,520px);height:100vh;max-height:920px;position:relative;background:#07101f;overflow:hidden;border-left:1px solid #1e4968;border-right:1px solid #1e4968}
+canvas{width:100%;height:100%;display:block;background:#0b3518}
+.topbar{position:absolute;top:0;left:0;right:0;height:74px;background:#060b16ee;z-index:10;border-bottom:1px solid #18314c}
+.score{position:absolute;left:12px;top:10px;height:54px;width:210px;border:2px solid #1e7fb3;border-radius:12px;background:#111a2bcc;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 0 18px #00bfff28}
+.scoreNum{font-size:27px;font-weight:1000;letter-spacing:1px}
+.minute{position:absolute;left:72px;top:53px;background:#0e1728;border:2px solid #1e7fb3;border-radius:7px;padding:2px 16px;font-weight:900;font-size:15px;z-index:11}
+.coins{position:absolute;right:12px;top:12px;height:44px;min-width:128px;border:2px solid #1e7fb3;border-radius:10px;background:#0e1728;display:flex;align-items:center;gap:14px;justify-content:center;font-weight:1000}
+.banner{position:absolute;left:50%;top:84px;transform:translateX(-50%);background:#050913e8;border:2px solid #1e7fb3;border-radius:12px;text-align:center;padding:9px 28px;z-index:9;box-shadow:0 0 20px #000}
+.banner b{color:#ffcc27;font-size:21px}.banner span{font-weight:900;font-size:13px;color:#cfe7ff}
+.objective{position:absolute;top:84px;left:14px;background:#06111ddd;border:2px solid #1f8fc0;border-radius:10px;padding:10px 12px;z-index:7;font-weight:900;font-size:13px;color:#dff7ff;box-shadow:0 0 16px #00c8ff30;width:142px}
+.playerPanel{position:absolute;top:84px;right:14px;width:150px;background:#06111ddd;border:2px solid #1f8fc0;border-radius:10px;padding:10px 12px;z-index:7;box-shadow:0 0 16px #00c8ff30}
+.playerPanel b{color:#ff4ecb}.stat{font-size:12px;color:#69efff;font-weight:900;margin-top:8px}.bar{height:5px;background:#172234;border-radius:8px;margin-top:3px;overflow:hidden}.bar span{display:block;height:100%;background:#42ff8e}
+.shotTypes{position:absolute;right:14px;bottom:172px;width:190px;background:#06111ddd;border:2px solid #1f8fc0;border-radius:10px;padding:10px;z-index:8}
+.shotTypes h3{margin:0 0 8px;text-align:center;font-size:16px}
+.shotBtn{height:34px;width:100%;margin:4px 0;border-radius:8px;border:1px solid #31455b;background:#0c1420;color:#dceaff;font-weight:900;text-align:left;padding-left:12px;font-size:12px}
+.shotBtn.active{border-color:#00eaff;background:#073247;color:#7ff7ff;box-shadow:0 0 14px #00d9ff88}
+.powerWrap{position:absolute;left:50%;bottom:82px;transform:translateX(-50%);width:330px;max-width:68%;height:46px;background:#101722;border:3px solid #526070;border-radius:18px;padding:7px;z-index:8;box-shadow:0 0 18px #00d9ff44}
+.powerLabel{position:absolute;left:50%;top:-28px;transform:translateX(-50%);background:#101722;color:white;font-weight:1000;padding:4px 18px;border-radius:8px;border:2px solid #2d4050}
+.powerFill{height:100%;border-radius:12px;background:linear-gradient(90deg,#e63030 0%,#ff8e18 32%,#ffea30 55%,#42d73b 76%,#0b111c 77%);width:0%}
+.marker{position:absolute;top:3px;width:5px;height:40px;background:white;border-radius:4px;box-shadow:0 0 9px #fff}
+.shootMain{position:absolute;left:50%;bottom:0px;transform:translateX(-50%);height:66px;width:205px;border-radius:18px;border:3px solid #4beeff;background:linear-gradient(#124b61,#071522);color:#bffaff;font-size:29px;font-weight:1000;z-index:8;box-shadow:0 0 28px #00e5ffcc;text-shadow:0 3px #05202d}
+.hint{position:absolute;left:50%;bottom:145px;transform:translateX(-50%);z-index:7;font-size:20px;font-weight:1000;color:#ecf5ff;text-shadow:0 3px 4px #000;white-space:nowrap}
+.resultOverlay{position:absolute;inset:0;background:linear-gradient(#00000022,#000000c0);z-index:20;display:none;align-items:flex-end;justify-content:center;padding:0 18px 80px}
+.resultCard{width:100%;background:#07111ddd;border:2px solid #1e8fc5;border-radius:16px;padding:18px;text-align:center;box-shadow:0 0 24px #00d9ff55}
+.bigText{font-size:42px;font-weight:1000;text-shadow:0 5px #000,0 0 20px #fff;margin-bottom:6px}
+.subText{font-size:17px;font-weight:1000;color:#56eaff}.reward{margin:14px auto 16px;background:#071c18;border-radius:10px;padding:12px;font-size:18px;font-weight:900;width:82%}
+.continue{height:54px;width:190px;border-radius:10px;border:2px solid #38dfff;background:#0b2437;color:#7ef4ff;font-size:21px;font-weight:1000}
+@media(max-width:430px){
+.banner{display:none}.playerPanel{width:132px}.objective{width:126px;font-size:12px}.coins{display:none}.score{width:185px}.shotTypes{right:8px;width:168px;bottom:168px}.powerWrap{max-width:62%}.hint{font-size:16px}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="game"></canvas>
+
+<div class="topbar">
+  <div class="score"><span class="scoreNum">FreeKick</span></div>
+  <div class="minute">78:44</div>
+  <div class="coins">🧑‍🧑‍🧒‍🧒 1.250</div>
+</div>
+
+
+<div class="objective">
+HEDEF<br>⚽ Gol at <span style="color:#4dfcff">(0/1)</span><br><br>
+BONUS<br>Köşe golü <span style="color:#7dff6a">(+25)</span>
+</div>
+
+<div class="playerPanel">
+<b>10 VOLKAN</b>
+<div class="stat">LONG SHOT <span style="float:right">86</span><div class="bar"><span style="width:86%"></span></div></div>
+<div class="stat">POWER <span style="float:right">84</span><div class="bar"><span style="width:84%"></span></div></div>
+<div class="stat">TECHNIQUE <span style="float:right">88</span><div class="bar"><span style="width:88%"></span></div></div>
+</div>
+
+<div class="shotTypes">
+<h3>ŞUT TİPİ</h3>
+<button class="shotBtn active" data-type="normal">➤ NORMAL</button>
+<button class="shotBtn" data-type="finesse">↷ FINESSE</button>
+<button class="shotBtn" data-type="power">⚡ POWER SHOT</button>
+<button class="shotBtn" data-type="knuckle">〰 KNUCKLE</button>
+</div>
+
+<div class="hint" id="hint">Kalede hedef seç, gücü tuttur</div>
+
+<div class="powerWrap">
+<div class="powerLabel">ŞUT GÜCÜ</div>
+<div class="powerFill" id="powerFill"></div>
+<div class="marker" id="marker"></div>
+</div>
+<button class="shootMain" id="shootMain">ŞUT!</button>
+
+<div class="resultOverlay" id="resultOverlay">
+  <div class="resultCard">
+    <div class="bigText" id="resultText">GOOOL!</div>
+    <div class="subText" id="resultSub">TOP CORNER!</div>
+    <div class="reward" id="reward">+25 ⭐</div>
+    <button class="continue" onclick="sendMiniGameResult()">DEVAM ET</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d"),wrap=document.getElementById("wrap");
+let W,H,DPR;
+function resize(){DPR=Math.min(devicePixelRatio||1,2);W=wrap.clientWidth;H=wrap.clientHeight;canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);resetPositions(false)}
+addEventListener("resize",resize);
+
+const powerFill=document.getElementById("powerFill"),marker=document.getElementById("marker"),shootMain=document.getElementById("shootMain");
+const resultOverlay=document.getElementById("resultOverlay"),resultText=document.getElementById("resultText"),resultSub=document.getElementById("resultSub"),reward=document.getElementById("reward"),hint=document.getElementById("hint");
+
+let lastMiniResult=null;
+let state="aim",power=.66,powerDir=1,shotType="normal",aim={x:.72,y:.28},shake=0,flash=0;
+const goal={x:0,y:0,w:0,h:0,net:0};
+const ball={x:0,y:0,startX:0,startY:0,targetX:0,targetY:0,drawX:0,drawY:0,r:9,flightT:0,flightSpeed:1.2,arc:0,curve:0,knuckle:0,spin:0,rot:0,moving:false,trail:[]};
+const shooter={x:0,y:0};
+const keeper={x:0,y:0,baseX:0,baseY:0,w:42,h:74,targetX:0,targetY:0,timer:0,reaction:.26,intel:.58,dive:false,prog:0};
+let wall=[];
+
+function rand(a,b){return a+Math.random()*(b-a)}
+function lerp(a,b,t){return a+(b-a)*t}
+function ease(t){return 1-Math.pow(1-t,3)}
+
+function resetPositions(){
+ if(!W)return;
+ goal.w=W*.72;goal.h=H*.17;goal.x=(W-goal.w)/2;goal.y=H*.205;
+ shooter.x=W*rand(.34,.46);shooter.y=H*rand(.69,.76);
+ ball.x=shooter.x+26;ball.y=shooter.y+18;ball.drawX=ball.x;ball.drawY=ball.y;
+ keeper.baseX=W/2;keeper.baseY=goal.y+goal.h*.62;keeper.x=keeper.baseX;keeper.y=keeper.baseY;keeper.dive=false;keeper.prog=0;keeper.timer=0;
+ aim={x:rand(goal.x+goal.w*.18,goal.x+goal.w*.82)/W,y:rand(goal.y+goal.h*.18,goal.y+goal.h*.76)/H};
+ wall=[];
+ const wallCount=3+Math.floor(Math.random()*2);
+ const wx=W*rand(.43,.58), wy=H*rand(.47,.55);
+ for(let i=0;i<wallCount;i++)wall.push({x:wx+(i-wallCount/2)*28,y:wy+rand(-6,6),jump:rand(0,1)});
+}
+
+resize();
+
+document.querySelectorAll(".shotBtn").forEach(b=>{
+ b.onclick=()=>{document.querySelectorAll(".shotBtn").forEach(x=>x.classList.remove("active"));b.classList.add("active");shotType=b.dataset.type}
+});
+
+function resetRound(){
+ state="aim";resultOverlay.style.display="none";ball.moving=false;ball.trail=[];ball.flightT=0;goal.net=0;shake=0;flash=0;hint.textContent="Kalede hedef seç, gücü tuttur";resetPositions();
+}
+
+function pointer(e){const r=canvas.getBoundingClientRect();const p=e.touches?e.touches[0]:e;return{x:p.clientX-r.left,y:p.clientY-r.top}}
+canvas.addEventListener("pointerdown",e=>selectAim(pointer(e)));
+canvas.addEventListener("pointermove",e=>{if(state==="aim" && e.buttons)selectAim(pointer(e))});
+canvas.addEventListener("touchstart",e=>{selectAim(pointer(e));e.preventDefault()},{passive:false});
+canvas.addEventListener("touchmove",e=>{selectAim(pointer(e));e.preventDefault()},{passive:false});
+
+function selectAim(p){
+ if(state!=="aim")return;
+ aim.x=Math.max(goal.x+14,Math.min(goal.x+goal.w-14,p.x))/W;
+ aim.y=Math.max(goal.y+14,Math.min(goal.y+goal.h-14,p.y))/H;
+}
+
+shootMain.onclick=shoot;
+function quality(){if(power>.62&&power<.79)return"perfect";if(power>.42&&power<.9)return"good";return"bad"}
+
+function shoot(){
+ if(state!=="aim")return;
+ state="shot";resultOverlay.style.display="none";hint.textContent="";
+ const q=quality();
+ let spread=q==="perfect"?6:q==="good"?24:50;
+ if(shotType==="power")spread+=18;
+ if(shotType==="finesse")spread-=6;
+ if(shotType==="knuckle")spread+=12;
+
+ let tx=aim.x*W+rand(-spread,spread),ty=aim.y*H+rand(-spread,spread);
+ ball.startX=ball.x;ball.startY=ball.y;ball.targetX=tx;ball.targetY=ty;ball.flightT=0;
+ ball.flightSpeed=1.03+power*.9+(shotType==="power"?.35:0);
+ ball.arc=shotType==="power"?90:shotType==="finesse"?125:shotType==="knuckle"?105:110;
+ ball.curve=shotType==="finesse"?rand(-70,70):shotType==="knuckle"?rand(-25,25):rand(-38,38);
+ ball.knuckle=shotType==="knuckle"?rand(18,34):0;
+ ball.spin=rand(-.48,.48);
+ ball.moving=true;ball.trail=[];shake=4;flash=.45;
+ decideKeeper(tx,ty);
+}
+
+function decideKeeper(tx,ty){
+ const difficult = shotType==="power"?.12:shotType==="knuckle"?.18:0;
+ const correct=Math.random() < Math.max(.25,keeper.intel-difficult);
+ let dir;
+ if(correct){
+  const left=tx<goal.x+goal.w*.42,right=tx>goal.x+goal.w*.58,top=ty<goal.y+goal.h*.45;
+  dir=left&&top?"topLeft":right&&top?"topRight":left?"lowLeft":right?"lowRight":"center";
+ } else {
+  const dirs=["left","right","center","topLeft","topRight","lowLeft","lowRight"];
+  dir=dirs[Math.floor(Math.random()*dirs.length)];
+ }
+ const map={
+  left:[goal.x+goal.w*.24,goal.y+goal.h*.62],
+  right:[goal.x+goal.w*.76,goal.y+goal.h*.62],
+  center:[goal.x+goal.w*.5,goal.y+goal.h*.62],
+  topLeft:[goal.x+goal.w*.22,goal.y+goal.h*.28],
+  topRight:[goal.x+goal.w*.78,goal.y+goal.h*.28],
+  lowLeft:[goal.x+goal.w*.22,goal.y+goal.h*.74],
+  lowRight:[goal.x+goal.w*.78,goal.y+goal.h*.74]
+ };
+ [keeper.targetX,keeper.targetY]=map[dir];keeper.timer=0;keeper.prog=0;keeper.dive=false;
+}
+
+function updateKeeper(dt){
+ keeper.timer+=dt;if(keeper.timer<keeper.reaction)return;
+ keeper.dive=true;keeper.prog=Math.min(1,keeper.prog+dt*3.3);
+ const t=ease(keeper.prog);
+ keeper.x=lerp(keeper.baseX,keeper.targetX,t);keeper.y=lerp(keeper.baseY,keeper.targetY,t);
+}
+
+function circleRect(c,r){
+ const rx=r.x-r.w/2-15,ry=r.y-r.h/2-15,rw=r.w+30,rh=r.h+30;
+ const cx=Math.max(rx,Math.min(c.x,rx+rw)),cy=Math.max(ry,Math.min(c.y,ry+rh));
+ return Math.hypot(c.x-cx,c.y-cy)<c.r+2;
+}
+
+function checkWallHit(){
+ const airHeight=ball.y-ball.drawY;
+ if(airHeight>52)return false;
+ for(const w of wall){
+  if(Math.hypot(ball.x-w.x,ball.y-w.y)<24)return true;
+ }
+ return false;
+}
+
+function checkResult(){
+ const finalBall={x:ball.targetX,y:ball.targetY,r:ball.r};
+ if(circleRect(finalBall,keeper))return"save";
+ const hitLeft=Math.abs(finalBall.x-goal.x)<14 && finalBall.y>goal.y-4 && finalBall.y<goal.y+goal.h+4;
+ const hitRight=Math.abs(finalBall.x-(goal.x+goal.w))<14 && finalBall.y>goal.y-4 && finalBall.y<goal.y+goal.h+4;
+ const hitBar=Math.abs(finalBall.y-goal.y)<14 && finalBall.x>goal.x && finalBall.x<goal.x+goal.w;
+ if((hitLeft||hitRight||hitBar)&&Math.random()<.75)return"post";
+ if(finalBall.x>goal.x+10&&finalBall.x<goal.x+goal.w-10&&finalBall.y>goal.y+8&&finalBall.y<goal.y+goal.h-8)return"goal";
+ return"out";
+}
+
+function update(dt){
+ if(state==="aim"){
+  power+=powerDir*dt*.9;if(power>1){power=1;powerDir=-1}if(power<0){power=0;powerDir=1}
+ }
+ powerFill.style.width=(power*100)+"%";marker.style.left=(power*100)+"%";
+
+ if(state==="shot"){
+  updateKeeper(dt);
+  ball.flightT=Math.min(1,ball.flightT+dt*ball.flightSpeed);
+  const t=ball.flightT,e=ease(t);
+  const arcY=Math.sin(Math.PI*t)*ball.arc;
+  let curveX=Math.sin(Math.PI*t)*ball.curve;
+  if(ball.knuckle) curveX += Math.sin(t*32)*ball.knuckle*Math.sin(Math.PI*t);
+  ball.x=lerp(ball.startX,ball.targetX,e)+curveX;
+  ball.y=lerp(ball.startY,ball.targetY,e);
+  ball.drawX=ball.x;ball.drawY=ball.y-arcY;
+  ball.rot+=ball.spin*dt*60;
+  ball.trail.push({x:ball.drawX,y:ball.drawY});if(ball.trail.length>22)ball.trail.shift();
+
+  if(checkWallHit()){finish("blocked");return;}
+  if(t>=1)finish(checkResult());
+ }
+ shake*=.88;goal.net*=.86;flash*=.86;
+}
+
+
+function buildMiniGameResult(r){
+  const ok = r==="goal";
+  const labels = {goal:"Long Shot Goal", save:"Saved", post:"Post", out:"Out", blocked:"Blocked"};
+  return {
+    source:"career-mini-game",
+    type:"shot",
+    result:r,
+    success:ok,
+    label:labels[r] || "Long Shot",
+    ratingDelta: ok ? 0.5 : -1.5
+  };
+}
+function sendMiniGameResult(){
+  window.parent.postMessage(lastMiniResult || buildMiniGameResult("out"), "*");
+}
+
+function finish(r){
+ lastMiniResult=buildMiniGameResult(r);
+ state="result";ball.moving=false;shake=8;
+ if(r==="goal"){resultText.textContent="GOOOOL!";resultText.style.color="#ffd936";resultSub.textContent=quality()==="perfect"?"TOP CORNER!":"UZAKTAN GOL!";reward.textContent="+25 ⭐  +150 🪙";goal.net=22;shake=13;flash=.6}
+ if(r==="save"){resultText.textContent="KURTARDI!";resultText.style.color="#ff4f7d";resultSub.textContent="KALECİ UZANDI!";reward.textContent="MORAL -5";shake=8}
+ if(r==="post"){resultText.textContent="DİREK!";resultText.style.color="#ffb42c";resultSub.textContent="ÇOK YAKINDI!";reward.textContent="TECHNIQUE +1";shake=10}
+ if(r==="out"){resultText.textContent="AUT!";resultText.style.color="#ddd";resultSub.textContent="GÜCÜ KONTROL ET!";reward.textContent="MORAL -3";shake=5}
+ if(r==="blocked"){resultText.textContent="BARAJ!";resultText.style.color="#ff6b3d";resultSub.textContent="SAVUNMAYA ÇARPTI!";reward.textContent="MORAL -2";shake=7}
+ setTimeout(()=>resultOverlay.style.display="flex",350);
+}
+
+function drawField(){
+ const g=ctx.createLinearGradient(0,70,0,H);g.addColorStop(0,"#164d26");g.addColorStop(1,"#083616");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ for(let i=0;i<11;i++){ctx.fillStyle=i%2?"rgba(255,255,255,.035)":"rgba(0,0,0,.055)";ctx.fillRect(0,74+i*76,W,76)}
+ ctx.fillStyle="#090922";ctx.fillRect(0,74,W,145);
+ for(let i=0;i<115;i++){let colors=["#ff4ee2","#2df06c","#4d7cff","#ffe95b","#ff9143","#9b56ff","#40e4de"];ctx.fillStyle=colors[i%colors.length];ctx.beginPath();ctx.arc((i*23)%W,96+(i*29)%84,2.2,0,7);ctx.fill()}
+ ctx.strokeStyle="rgba(255,255,255,.50)";ctx.lineWidth=2;
+ ctx.strokeRect(20,170,W-40,H-230);
+ ctx.strokeRect(W*.18,goal.y+goal.h+10,W*.64,155);
+ ctx.strokeRect(W*.34,goal.y+goal.h+10,W*.32,62);
+ ctx.beginPath();ctx.arc(W/2,H*.58,72,0,Math.PI*2);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(20,H*.58);ctx.lineTo(W-20,H*.58);ctx.stroke();
+}
+
+function drawGoal(){
+ ctx.save();ctx.translate(rand(-goal.net,goal.net),rand(-goal.net,goal.net));
+ ctx.fillStyle="#083b1b";ctx.fillRect(goal.x,goal.y,goal.w,goal.h);
+ ctx.strokeStyle="rgba(255,255,255,.16)";ctx.lineWidth=2;
+ for(let x=goal.x+18;x<goal.x+goal.w;x+=18){ctx.beginPath();ctx.moveTo(x,goal.y);ctx.lineTo(x,goal.y+goal.h);ctx.stroke()}
+ for(let y=goal.y+18;y<goal.y+goal.h;y+=18){ctx.beginPath();ctx.moveTo(goal.x,y);ctx.lineTo(goal.x+goal.w,y);ctx.stroke()}
+ ctx.strokeStyle="#f4f7f8";ctx.lineWidth=10;ctx.strokeRect(goal.x,goal.y,goal.w,goal.h);
+ ctx.strokeStyle="#bfcbd1";ctx.lineWidth=4;ctx.strokeRect(goal.x+6,goal.y+6,goal.w-12,goal.h-12);ctx.restore();
+}
+
+function drawTargets(){
+ [[.10,.18,"#ff4965"],[.90,.18,"#ffa726"],[.10,.70,"#249dff"],[.90,.70,"#249dff"]].forEach((p,i)=>{
+  let x=goal.x+goal.w*p[0],y=goal.y+goal.h*p[1],s=1+Math.sin(performance.now()/220+i)*.12;
+  ctx.shadowBlur=20;ctx.shadowColor=p[2];ctx.fillStyle=p[2];ctx.beginPath();ctx.arc(x,y,12*s,0,7);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle="white";ctx.lineWidth=2;ctx.stroke()
+ });
+}
+
+function drawPlayer(x,y,kit,num,scale=1,dir=1){
+ ctx.save();ctx.translate(x,y+Math.sin(performance.now()/260+x)*1.2);ctx.scale(scale*dir,scale);
+ ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(0,32,22,6,0,0,7);ctx.fill();
+ if(kit==="main"){ctx.fillStyle="#66c7ee";ctx.fillRect(-14,-48,28,16);ctx.fillStyle="#ffd09b";ctx.fillRect(-17,-32,34,28);ctx.fillStyle="#d25522";ctx.fillRect(-18,-4,36,36);ctx.fillStyle="#8d1a1f";ctx.fillRect(-4,-4,8,36)}
+ else if(kit==="keeper"){ctx.fillStyle="#0c8a42";ctx.fillRect(-14,-48,28,16);ctx.fillStyle="#ffd09b";ctx.fillRect(-17,-32,34,28);ctx.fillStyle="#0b7e3c";ctx.fillRect(-18,-4,36,36)}
+ else {ctx.fillStyle="#1d2338";ctx.fillRect(-14,-48,28,16);ctx.fillStyle="#ffd09b";ctx.fillRect(-17,-32,34,28);ctx.fillStyle="#182137";ctx.fillRect(-18,-4,36,36);ctx.fillStyle="#c82b3b";ctx.fillRect(-4,-4,8,36)}
+ ctx.fillStyle="#ffd09b";ctx.fillRect(-26,2,8,28);ctx.fillRect(18,2,8,28);
+ ctx.fillStyle=kit==="enemy"?"#eee":"#d25522";ctx.fillRect(-16,32,12,28);ctx.fillRect(4,32,12,28);
+ ctx.fillStyle="#101820";ctx.fillRect(-18,58,15,6);ctx.fillRect(3,58,15,6);
+ ctx.fillStyle="#fff";ctx.font="bold 14px Arial";ctx.textAlign="center";if(num)ctx.fillText(num,0,22);
+ ctx.restore();
+}
+
+function drawKeeper(){
+ ctx.save();ctx.translate(keeper.x,keeper.y+Math.sin(performance.now()/220)*1.5);
+ if(keeper.dive)ctx.rotate(keeper.x<keeper.baseX?-.6:keeper.x>keeper.baseX?.6:0);
+ drawPlayer(0,0,"keeper","",.95,1);
+ ctx.restore();
+}
+
+function drawWall(){
+ wall.forEach((w,i)=>{
+  const jump=state==="shot"?Math.sin(Math.min(1,ball.flightT)*Math.PI)*(10+w.jump*10):0;
+  drawPlayer(w.x,w.y-jump,"enemy","",.78, i%2?1:-1);
+ });
+}
+
+function drawAim(){
+ if(state!=="aim")return;
+ ctx.setLineDash([7,8]);ctx.strokeStyle="rgba(255,255,255,.86)";ctx.lineWidth=4;
+ ctx.beginPath();ctx.moveTo(ball.x,ball.y);ctx.quadraticCurveTo((ball.x+aim.x*W)/2,H*.48,aim.x*W,aim.y*H);ctx.stroke();ctx.setLineDash([]);
+ ctx.strokeStyle="#e7ff4d";ctx.lineWidth=5;ctx.shadowColor="#e7ff4d";ctx.shadowBlur=16;
+ ctx.beginPath();ctx.moveTo(ball.x,ball.y);ctx.quadraticCurveTo((ball.x+aim.x*W)/2,H*.48,aim.x*W,aim.y*H);ctx.stroke();ctx.shadowBlur=0;
+ ctx.fillStyle="#ffff5a";ctx.beginPath();ctx.moveTo(aim.x*W,aim.y*H-13);ctx.lineTo(aim.x*W+18,aim.y*H+4);ctx.lineTo(aim.x*W-7,aim.y*H+8);ctx.fill();
+}
+
+function drawBall(){
+ ball.trail.forEach((p,i)=>{ctx.globalAlpha=i/ball.trail.length*.42;ctx.fillStyle=shotType==="knuckle"?"#bdf8ff":"white";ctx.beginPath();ctx.arc(p.x,p.y,8*i/ball.trail.length,0,7);ctx.fill()});ctx.globalAlpha=1;
+ const bx=ball.moving?ball.drawX:ball.x,by=ball.moving?ball.drawY:ball.y;
+ ctx.fillStyle="rgba(0,0,0,.30)";ctx.beginPath();ctx.ellipse(bx,ball.y+9,14,4,0,0,7);ctx.fill();
+ if(ball.moving){ctx.strokeStyle="rgba(120,240,255,.30)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx,ball.y+8);ctx.stroke()}
+ ctx.save();ctx.translate(bx,by);ctx.rotate(ball.rot);
+ ctx.fillStyle="white";ctx.beginPath();ctx.arc(0,0,8,0,7);ctx.fill();ctx.fillStyle="#111";ctx.beginPath();ctx.arc(0,0,3,0,7);ctx.fill();ctx.restore();
+}
+
+function draw(){
+ ctx.clearRect(0,0,W,H);ctx.save();ctx.translate(rand(-shake,shake),rand(-shake,shake));
+ drawField();drawGoal();drawTargets();drawKeeper();drawWall();drawAim();drawPlayer(shooter.x,shooter.y,"main","10",.92);drawBall();
+ ctx.restore();
+ if(flash>0){ctx.fillStyle=`rgba(255,255,255,${flash*.25})`;ctx.fillRect(0,0,W,H)}
+}
+
+let last=performance.now();
+function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

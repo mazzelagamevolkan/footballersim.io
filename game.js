@@ -1693,7 +1693,7 @@ function applyRatingCaps(){
 /* =========================
    Season Simulation (with dice flow)
 ========================= */
-function simulateSeasonCore(dicePack){
+function simulateSeasonCore(dicePack, mgResult){
   const offer = Career.lastOffers[Career.selectedOfferIndex];
 
   // v8 Adaptasyon setup: yeni ve güçlü lige geçişte 1 sezon adaptasyon cezası
@@ -1873,6 +1873,9 @@ function simulateSeasonCore(dicePack){
   // dice rating delta (direct)
   ratingDelta += (diceAcc.ratingDelta||0);
 
+  // mini-game rating delta (+0.5 success / -1.5 fail, accumulated)
+  const mgDelta = mgResult ? mgResult.ratingDelta || 0 : 0;
+
   // 30+ max +1
   if(Career.age >= 30 && ratingDelta > 1) ratingDelta = 1;
 
@@ -1981,8 +1984,8 @@ function simulateSeasonCore(dicePack){
     ratingDelta = Math.round(ratingDelta * 0.7);
   }
 
-  // Apply base
-  Career.rating = clamp(Career.rating + ratingDelta, 40, 99);
+  // Apply base (mini-game delta applied as float, then rounded in total)
+  Career.rating = clamp(Math.round(Career.rating + ratingDelta + mgDelta), 40, 99);
   Career.rep = clamp(Career.rep + repDelta, 0, 100);
   Career.valueM = clamp(Career.valueM + valueDelta, 0.4, 250);
   Career.peakValueM = Math.max(Career.peakValueM, Career.valueM);
@@ -2174,7 +2177,8 @@ function simulateSeasonCore(dicePack){
     diceCount,
     diceSum,
     legendaryStory,
-    legendaryText
+    legendaryText,
+    mgResult: mgResult || null
   };
 }
 
@@ -2472,6 +2476,18 @@ function renderResults(){
   document.getElementById("rDiceSummary").textContent = r.diceSum || "—";
   document.getElementById("rLegendary").textContent = r.legendaryText || "—";
 
+  // Mini-game sonucu
+  const mgEl = document.getElementById("rMiniGame");
+  if(mgEl){
+    if(r.mgResult && !r.mgResult.skipped){
+      const ok = r.mgResult.success;
+      const delta = ok ? "+0.5" : "-1.5";
+      mgEl.innerHTML = `<span class="mg-result-badge ${ok?"good":"bad"}">${ok?"✅":"❌"} ${r.mgResult.label || r.mgResult.type}</span> Rating ${delta}`;
+    } else {
+      mgEl.textContent = r.mgResult && r.mgResult.skipped ? "Atlandı" : "—";
+    }
+  }
+
   // Sosyal tab
   document.getElementById("rTweets").textContent = genTweets(r);
   document.getElementById("rEvent").textContent = genSeasonNarrative(r);
@@ -2553,35 +2569,33 @@ function renderSummary(){
    Play Season / Next Season
 ========================= */
 document.getElementById("btnPlaySeason").onclick = ()=>{
-  // sezon sim: loader -> zar olayları (1..5) -> core sim -> results
   showLoader("Sezon simüle ediliyor…", "Ön hazırlık yapılıyor…");
   setTimeout(()=>{
     hideLoader();
-
     runDiceEventsFlow(5, (dicePack)=>{
-      showLoader("Lig hesaplanıyor…", "Skorlar ve tablolar oluşuyor…");
-      setTimeout(()=>{
-        hideLoader();
-        try{
-          simulateSeasonCore(dicePack);
-        runPostSeasonFlow(Career.lastResult);
-        } catch(err){
-          console.error(err);
-          openModal({
-            title:"Hata",
-            desc:"Bir şey patladı. Aşağıdaki hata metnini bana atarsan 10 dakikada temizlerim.",
-            stepIndex:0, stepsTotal:1,
-            foot:"Debug",
-            revealLabel:"DETAY",
-            nextLabel:"KAPAT",
-            initialOutcome:"Hata oluştu. Detay için bak…",
-            revealFn: ()=> (err && (err.stack||err.message)) ? String(err.stack||err.message) : "Bilinmeyen hata",
-            nextFn: ()=>{}
-          });
-        }
-      }, 900);
+      // Mini-game araya giriyor
+      MiniGame.run((mgResult)=>{
+        showLoader("Lig hesaplanıyor…", "Skorlar ve tablolar oluşuyor…");
+        setTimeout(()=>{
+          hideLoader();
+          try{
+            simulateSeasonCore(dicePack, mgResult);
+            runPostSeasonFlow(Career.lastResult);
+          } catch(err){
+            console.error(err);
+            openModal({
+              title:"Hata",
+              desc:"Bir şey patladı. Aşağıdaki hata metnini bana atarsan 10 dakikada temizlerim.",
+              stepIndex:0, stepsTotal:1, foot:"Debug",
+              revealLabel:"DETAY", nextLabel:"KAPAT",
+              initialOutcome:"Hata oluştu. Detay için bak…",
+              revealFn: ()=> (err && (err.stack||err.message)) ? String(err.stack||err.message) : "Bilinmeyen hata",
+              nextFn: ()=>{}
+            });
+          }
+        }, 900);
+      });
     });
-
   }, 700);
 };
 
@@ -2655,6 +2669,124 @@ document.addEventListener('click', e=>{
 });
 
 /* =========================
+   Mini-Game System
+========================= */
+const MiniGame=(function(){
+  const GAMES = [
+    { type:"penalty", title:"⚽ Penaltı", file:"mini_penalty.html" },
+    { type:"shot",    title:"🥅 Uzaktan Şut", file:"mini_longshot.html" },
+    { type:"pass",    title:"🎯 Pas", file:"mini_pass.html" }
+  ];
+
+  let doneCb = null;
+  let overlay = null;
+  let iframe = null;
+
+  function ensureOverlay(){
+    if(overlay) return;
+
+    overlay = document.createElement("div");
+    overlay.id = "externalMiniGameOverlay";
+    overlay.style.cssText = `
+      position:fixed;
+      inset:0;
+      z-index:99999;
+      background:rgba(2,6,16,.94);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:0;
+    `;
+
+    const frameWrap = document.createElement("div");
+    frameWrap.style.cssText = `
+      width:min(100vw,520px);
+      height:100vh;
+      max-height:920px;
+      position:relative;
+      background:#030712;
+      overflow:hidden;
+      border-left:1px solid #1e4968;
+      border-right:1px solid #1e4968;
+      box-shadow:0 0 40px rgba(0,217,255,.25);
+    `;
+
+    const skip = document.createElement("button");
+    skip.textContent = "ATLA";
+    skip.style.cssText = `
+      position:absolute;
+      right:12px;
+      top:84px;
+      z-index:10;
+      height:38px;
+      padding:0 14px;
+      border-radius:10px;
+      border:2px solid #2e8fca;
+      background:#0b1830;
+      color:#dff7ff;
+      font-weight:900;
+    `;
+    skip.onclick = () => finish({
+      skipped:true,
+      success:false,
+      ratingDelta:0,
+      type:"mini-game",
+      label:"Atlandı"
+    });
+
+    iframe = document.createElement("iframe");
+    iframe.style.cssText = `
+      width:100%;
+      height:100%;
+      border:0;
+      display:block;
+      background:#030712;
+    `;
+    iframe.setAttribute("allow", "fullscreen");
+
+    frameWrap.appendChild(iframe);
+    frameWrap.appendChild(skip);
+    overlay.appendChild(frameWrap);
+    document.body.appendChild(overlay);
+
+    window.addEventListener("message", (ev)=>{
+      const data = ev.data || {};
+      if(data.source !== "career-mini-game") return;
+      finish(data);
+    });
+  }
+
+  function finish(result){
+    if(!doneCb) return;
+    const cb = doneCb;
+    doneCb = null;
+    if(iframe) iframe.src = "about:blank";
+    if(overlay) overlay.style.display = "none";
+
+    cb({
+      skipped: !!result.skipped,
+      success: !!result.success,
+      ratingDelta: Number(result.ratingDelta || 0),
+      type: result.type || "mini-game",
+      label: result.label || result.result || "Mini Game",
+      rawResult: result.result || null
+    });
+  }
+
+  return {
+    run(cb){
+      doneCb = cb;
+      ensureOverlay();
+
+      const game = GAMES[Math.floor(Math.random() * GAMES.length)];
+      overlay.style.display = "flex";
+      iframe.src = game.file + "?t=" + Date.now();
+    }
+  };
+})();
+
+
+/* =========================
    Initial UI
 ========================= */
 function syncShHeight(){
@@ -2670,3 +2802,44 @@ checkContinue();
 renderLb();
 show(screenMain);
 pillState.textContent="Menü";
+
+/* ── Settings Panel ─────────────────────────────────────── */
+(function(){
+  const btn=document.getElementById('settingsBtn');
+  const panel=document.getElementById('settingsPanel');
+  const bgmSlider=document.getElementById('bgmVolSlider');
+  const bgmVal=document.getElementById('bgmVolVal');
+  const sfxSlider=document.getElementById('sfxVolSlider');
+  const sfxVal=document.getElementById('sfxVolVal');
+  if(!btn||!panel)return;
+
+  const savedBgm=parseInt(localStorage.getItem('bgmVol')||'18');
+  const savedSfx=parseInt(localStorage.getItem('sfxVol')||'50');
+  bgmSlider.value=savedBgm; bgmVal.textContent=savedBgm;
+  sfxSlider.value=savedSfx; sfxVal.textContent=savedSfx;
+
+  btn.addEventListener('click',function(e){
+    e.stopPropagation();
+    panel.hidden=!panel.hidden;
+  });
+
+  document.addEventListener('click',function(e){
+    if(!panel.hidden&&!panel.contains(e.target)&&e.target!==btn)
+      panel.hidden=true;
+  });
+
+  bgmSlider.addEventListener('input',function(){
+    const v=parseInt(this.value);
+    bgmVal.textContent=v;
+    localStorage.setItem('bgmVol',v);
+    if(window.setBgmVolume) window.setBgmVolume(v/100);
+    else if(window._bgmNode) window._bgmNode.gain.value=v/100;
+  });
+
+  sfxSlider.addEventListener('input',function(){
+    const v=parseInt(this.value);
+    sfxVal.textContent=v;
+    localStorage.setItem('sfxVol',v);
+    if(window.setSfxVolume) window.setSfxVolume(v/100);
+  });
+})();

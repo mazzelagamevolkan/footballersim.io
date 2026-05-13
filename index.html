@@ -297,6 +297,7 @@
         <div class="kv"><div class="k">Lig Olayı</div><div class="v" id="rLeagueEvent">-</div></div>
         <div class="kv"><div class="k">Rating Δ / Rep Δ</div><div class="v" id="rRatingRep">-</div></div>
         <div class="kv" style="grid-column:1/-1"><div class="k">Zar Olayları</div><div class="v" id="rDiceSummary">-</div></div>
+        <div class="kv" style="grid-column:1/-1"><div class="k">Mini Oyun</div><div class="v" id="rMiniGame">-</div></div>
         <div class="kv" style="grid-column:1/-1"><div class="k">Legendary Growth</div><div class="v" id="rLegendary">-</div></div>
       </div>
     </div>
@@ -410,6 +411,36 @@
       <button class="btn danger" id="btnReset2">Yeni Kariyer</button>
     </div>
     <div class="foot">Not: Kulüp/oyuncu isimleri kurgusaldır.</div>
+  </div>
+</div>
+
+<!-- Settings Button & Panel -->
+<button id="settingsBtn" aria-label="Ayarlar">⚙</button>
+<div id="settingsPanel" hidden>
+  <div class="sp-row">
+    <label for="bgmVolSlider">🎵 Müzik Sesi</label>
+    <input type="range" id="bgmVolSlider" min="0" max="100" value="18">
+    <span id="bgmVolVal">18</span>
+  </div>
+  <div class="sp-row">
+    <label for="sfxVolSlider">🔊 Efekt Sesi</label>
+    <input type="range" id="sfxVolSlider" min="0" max="100" value="50">
+    <span id="sfxVolVal">50</span>
+  </div>
+</div>
+
+<!-- Mini-Game Overlay -->
+<div id="mgOverlay">
+  <div class="mg-inner">
+    <div class="mg-header">
+      <div>
+        <div id="mgTitle" class="mg-title"></div>
+        <div id="mgSubtitle" class="mg-subtitle"></div>
+      </div>
+      <button id="mgSkip" class="mg-skip">Atla</button>
+    </div>
+    <canvas id="mgCanvas"></canvas>
+    <div id="mgButtons" class="mg-buttons"></div>
   </div>
 </div>
 
