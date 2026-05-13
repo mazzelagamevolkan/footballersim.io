@@ -12,36 +12,23 @@ const SFX = {
 };
 
 let _bgmStarted = false;
-let _bgmVolume = parseInt(localStorage.getItem('bgmVol') || '18') / 100;
-let _sfxVolume = parseInt(localStorage.getItem('sfxVol') || '50') / 100;
-
-window.setBgmVolume = function(v){
-  _bgmVolume = Math.max(0, Math.min(1, v));
-  const bgm = SFX.bgm();
-  if(bgm) bgm.volume = _bgmVolume;
-};
-
-window.setSfxVolume = function(v){
-  _sfxVolume = Math.max(0, Math.min(1, v));
-};
 
 function playSound(key, vol){
   try{
     const el = SFX[key]?.();
     if(!el) return;
-    el.volume = (vol ?? 1.0) * _sfxVolume;
+    el.volume = vol ?? 1.0;
     el.currentTime = 0;
     el.play().catch(()=>{});
   } catch(_){}
 }
 
 function startBgm(){
-  const el = SFX.bgm();
-  if(!el) return;
-  el.volume = _bgmVolume;
   if(_bgmStarted) return;
   _bgmStarted = true;
-  el.loop = true;
+  const el = SFX.bgm();
+  if(!el) return;
+  el.volume = 0.18;
   el.play().catch(()=>{});
 }
 
@@ -50,6 +37,7 @@ function stopBgm(){
   _bgmStarted = false;
 }
 
+// Tüm butonlarda click sesi — kullanıcı etkileşimi BGM'i de başlatır
 document.addEventListener('click', e=>{
   startBgm();
   if(e.target.closest('.tab-btn')){
@@ -58,7 +46,6 @@ document.addEventListener('click', e=>{
     playSound('click', 0.5);
   }
 }, true);
-
 /* =========================
    Helpers
 ========================= */
@@ -2817,41 +2804,60 @@ pillState.textContent="Menü";
 
 /* ── Settings Panel ─────────────────────────────────────── */
 (function(){
-  const btn=document.getElementById('settingsBtn');
-  const panel=document.getElementById('settingsPanel');
-  const bgmSlider=document.getElementById('bgmVolSlider');
-  const bgmVal=document.getElementById('bgmVolVal');
-  const sfxSlider=document.getElementById('sfxVolSlider');
-  const sfxVal=document.getElementById('sfxVolVal');
-  if(!btn||!panel)return;
+  function initSettingsPanel(){
+    const btn=document.getElementById('settingsBtn');
+    const panel=document.getElementById('settingsPanel');
+    const bgmSlider=document.getElementById('bgmVolSlider');
+    const bgmVal=document.getElementById('bgmVolVal');
+    const sfxSlider=document.getElementById('sfxVolSlider');
+    const sfxVal=document.getElementById('sfxVolVal');
 
-  const savedBgm=parseInt(localStorage.getItem('bgmVol')||'18');
-  const savedSfx=parseInt(localStorage.getItem('sfxVol')||'50');
-  bgmSlider.value=savedBgm; bgmVal.textContent=savedBgm;
-  sfxSlider.value=savedSfx; sfxVal.textContent=savedSfx;
+    if(!btn || !panel || !bgmSlider || !sfxSlider) {
+      console.warn("Settings panel elementleri bulunamadı");
+      return;
+    }
 
-  btn.addEventListener('click',function(e){
-    e.stopPropagation();
-    panel.hidden=!panel.hidden;
-  });
+    const savedBgm=parseInt(localStorage.getItem('bgmVol') || '18', 10);
+    const savedSfx=parseInt(localStorage.getItem('sfxVol') || '50', 10);
 
-  document.addEventListener('click',function(e){
-    if(!panel.hidden&&!panel.contains(e.target)&&e.target!==btn)
-      panel.hidden=true;
-  });
+    bgmSlider.value=savedBgm;
+    if(bgmVal) bgmVal.textContent=savedBgm;
 
-  bgmSlider.addEventListener('input',function(){
-    const v=parseInt(this.value);
-    bgmVal.textContent=v;
-    localStorage.setItem('bgmVol',v);
-    if(window.setBgmVolume) window.setBgmVolume(v/100);
-    else if(window._bgmNode) window._bgmNode.gain.value=v/100;
-  });
+    sfxSlider.value=savedSfx;
+    if(sfxVal) sfxVal.textContent=savedSfx;
 
-  sfxSlider.addEventListener('input',function(){
-    const v=parseInt(this.value);
-    sfxVal.textContent=v;
-    localStorage.setItem('sfxVol',v);
-    if(window.setSfxVolume) window.setSfxVolume(v/100);
-  });
+    if(window.setBgmVolume) window.setBgmVolume(savedBgm/100);
+    if(window.setSfxVolume) window.setSfxVolume(savedSfx/100);
+
+    btn.onclick=function(e){
+      e.stopPropagation();
+      panel.hidden=!panel.hidden;
+    };
+
+    document.addEventListener('click',function(e){
+      if(!panel.hidden && !panel.contains(e.target) && e.target!==btn){
+        panel.hidden=true;
+      }
+    });
+
+    bgmSlider.oninput=function(){
+      const v=parseInt(this.value,10);
+      if(bgmVal) bgmVal.textContent=v;
+      localStorage.setItem('bgmVol',v);
+      if(window.setBgmVolume) window.setBgmVolume(v/100);
+    };
+
+    sfxSlider.oninput=function(){
+      const v=parseInt(this.value,10);
+      if(sfxVal) sfxVal.textContent=v;
+      localStorage.setItem('sfxVol',v);
+      if(window.setSfxVolume) window.setSfxVolume(v/100);
+    };
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", initSettingsPanel);
+  } else {
+    initSettingsPanel();
+  }
 })();
