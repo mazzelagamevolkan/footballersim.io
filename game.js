@@ -28,7 +28,7 @@ function startBgm(){
   _bgmStarted = true;
   const el = SFX.bgm();
   if(!el) return;
-  el.volume = 0.18;
+  el.volume = 0.08;
   el.play().catch(()=>{});
 }
 
