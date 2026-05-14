@@ -218,6 +218,23 @@ select,input{ min-height:44px; }
 @keyframes fadeInUp{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:translateY(0); } }
 .anim-fiu{ animation:fadeInUp .45s cubic-bezier(.22,1,.36,1) both; }
 
+/* ── Best Season card ── */
+.bsc-header{ display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:6px; }
+.bsc-club{ font-size:17px; font-weight:800; margin-bottom:6px; }
+.bsc-league{ font-size:12px; font-weight:400; color:var(--muted); margin-left:4px; }
+.bsc-row{ display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px; }
+.bsc-flavor{ margin-top:6px; font-size:11px; color:var(--muted); }
+
+/* ── Club History cards ── */
+.chc{ background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); border-radius:12px; padding:11px 13px; margin-bottom:8px; }
+.chc-top{ display:flex; gap:8px; align-items:center; margin-bottom:5px; }
+.chc-s{ font-size:11px; font-weight:700; background:rgba(255,255,255,.1); border-radius:6px; padding:2px 7px; }
+.chc-age{ font-size:11px; color:var(--muted); }
+.chc-div{ margin-left:auto; font-size:11px; color:var(--muted); }
+.chc-club{ font-size:15px; font-weight:700; margin-bottom:5px; }
+.chc-bot{ display:flex; justify-content:space-between; align-items:center; font-size:12px; color:rgba(232,240,255,.8); }
+.chc-role{ font-size:11px; color:var(--muted); margin-left:4px; }
+
 /* ── Goal reveal & achievement overlays ── */
 @keyframes slideUp   { from{ transform:translateY(48px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
 @keyframes popIn     { from{ transform:scale(.65); opacity:0; } to{ transform:scale(1); opacity:1; } }

@@ -12,12 +12,13 @@ const SFX = {
 };
 
 let _bgmStarted = false;
+let _sfxVol = parseFloat(localStorage.getItem('sfxVol') || '50') / 100;
 
 function playSound(key, vol){
   try{
     const el = SFX[key]?.();
     if(!el) return;
-    el.volume = vol ?? 1.0;
+    el.volume = (vol ?? 1.0) * _sfxVol;
     el.currentTime = 0;
     el.play().catch(()=>{});
   } catch(_){}
@@ -28,9 +29,18 @@ function startBgm(){
   _bgmStarted = true;
   const el = SFX.bgm();
   if(!el) return;
-  el.volume = 0.18;
+  el.volume = parseFloat(localStorage.getItem('bgmVol') || '18') / 100;
   el.play().catch(()=>{});
 }
+
+window.setBgmVolume = function(v){
+  const el = SFX.bgm();
+  if(el) el.volume = v;
+};
+
+window.setSfxVolume = function(v){
+  _sfxVol = v;
+};
 
 function stopBgm(){
   try{ SFX.bgm()?.pause(); } catch(_){}
@@ -46,6 +56,7 @@ document.addEventListener('click', e=>{
     playSound('click', 0.5);
   }
 }, true);
+
 /* =========================
    Helpers
 ========================= */
@@ -122,8 +133,12 @@ function openModal(ctx){
   if(ctx.bodyHTML){
     modalOutcome.innerHTML = ctx.bodyHTML;
     btnReveal.classList.add("hidden");
-    btnNext.classList.remove("hidden");
-    btnNext.textContent = ctx.nextLabel || "KAPAT";
+    if(ctx.noNext){
+      btnNext.classList.add("hidden");
+    } else {
+      btnNext.classList.remove("hidden");
+      btnNext.textContent = ctx.nextLabel || "KAPAT";
+    }
   } else {
     modalOutcome.textContent = ctx.initialOutcome || "Kartı çevir…";
     btnReveal.textContent = ctx.revealLabel || "KARTI ÇEVİR";
@@ -286,7 +301,8 @@ const Career = {
   },
 
   retired:false,
-  earnedAchievements: []
+  earnedAchievements: [],
+  recentEventIds: []
 };
 
 /* =========================
@@ -778,44 +794,939 @@ function rollBreakoutSlump(){
    - not back-to-back (we show loader between)
 ========================= */
 const DICE_EVENTS = [
-  { title:"🏥 Sakatlık Gölgesi", desc:"Antrenmanda bir terslik. Doktor 'temkinli ol' dedi." },
-  { title:"🔥 Form Patlaması", desc:"Bir anda her şey akmaya başladı. Tribün de fark etti." },
-  { title:"🧨 Taraftar Baskısı", desc:"Sosyal medya kaynıyor. Bir kısım seni yiyor." },
-  { title:"🕵️ Transfer Dedikodusu", desc:"Menajer söylentileri var. Kulüp de tedirgin." },
-  { title:"🌙 Gece Hayatı", desc:"Bir fotoğraf düştü. Doğru mu değil mi karışık." },
-  { title:"🤝 Hoca Güveni", desc:"Hoca 'bu sene senin sene' modunda." },
+
+  /* ═══════════════════ SAHA ═══════════════════ */
+  {
+    id:"sakatlık_gölgesi", cat:"saha",
+    title:"🏥 Sakatlık Gölgesi",
+    descs:[
+      "Antrenmanda bir terslik. Doktor 'temkinli ol' diyor.",
+      "Dün çektiğin ağrı bugün daha da kötü. Fizyo endişeli.",
+      "Sezon öncesi tarama pek iç açıcı çıkmadı. Risk hesabı yapman lazım."
+    ],
+    choices:[
+      { label:"⚕️ Dinlen, riski alma", sub:"Birkaç maç kapat, iyileş.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.matchesPenalty+=rnd(2,4); acc.ratingDelta-=1; }
+          else if(roll<=4){ acc.matchesPenalty+=rnd(1,2); }
+          else { acc.repDelta+=1; }
+        },
+        outcomes:{bad:"Tam iyileşemedin, önemli maçları kaçırdın.",ok:"Temkinli yaklaştın, atlattın.",good:"Beklenenden çabuk iyileştin. Takım seni karşıladı."}
+      },
+      { label:"💪 Sahaya çık, riske gir", sub:"Takım seni bekliyor, acısına bas.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.ratingDelta-=2; acc.matchesPenalty+=rnd(3,6); acc.repDelta-=1; }
+          else if(roll<=4){ acc.ratingDelta-=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=rnd(1,2); acc.followersDelta+=rnd(80,220); }
+        },
+        outcomes:{bad:"Durumu ağırlaştırdın. Uzun süre sahaya çıkamadın.",ok:"Zorlandın ama atlattın.",good:"Cesaret ödüllendi! Sahada fark yarattın."}
+      }
+    ]
+  },
+
+  {
+    id:"form_patlaması", cat:"saha",
+    title:"🔥 Form Patlaması",
+    descs:[
+      "Her şey yerine oturuyor. Tribün de fark etti.",
+      "Antrenmanlarda inanılmaz bir enerji var. Hoca 'devam et' diyor.",
+      "Art arda üç iyi maç çıkardın. Bunu sezona yaymak lazım."
+    ],
+    choices:[
+      { label:"🎯 İstikrarı koru", sub:"Bu formu sonuna kadar götür.",
+        applyFn(acc,roll){
+          if(roll<=2){ /* form kaçtı ama hasarsız */ }
+          else if(roll<=4){ acc.ratingDelta+=1; acc.formMult+=0.03; }
+          else { acc.ratingDelta+=1; acc.repDelta+=rnd(1,2); acc.followersDelta+=rnd(100,300); }
+        },
+        outcomes:{bad:"Form kaçtı, ama hasarı sınırlı tuttun.",ok:"Tutarlı devam ettin.",good:"Harika bir seri yakaladın."}
+      },
+      { label:"🚀 Rekor peşinde koş", sub:"Bu fırsatı sonuna kadar kullan.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; acc.formMult-=0.04; acc.followersDelta-=rnd(50,150); }
+          else if(roll<=4){ acc.ratingDelta+=1; acc.formMult+=0.02; }
+          else { acc.ratingDelta+=2; acc.repDelta+=rnd(2,3); acc.followersDelta+=rnd(250,600); }
+        },
+        outcomes:{bad:"Baskı altında çöktün. Yorgunluk faturayı kesti.",ok:"Yeterince ittirdin.",good:"İnanılmaz bir performans! Herkes senden bahsediyor."}
+      }
+    ]
+  },
+
+  {
+    id:"derbi_haftası", cat:"saha",
+    title:"🏆 Derbi Haftası",
+    descs:[
+      "Sezonun en büyük derbisi geliyor. Şehir yangın yeri.",
+      "Rakip taraftar sosyal medyayı çökertmiş bile. Sahaya çıkmadan savaş başladı.",
+      "Hoca toplantıda 'bu maç sezon olabilir' dedi. Gözler sende."
+    ],
+    choices:[
+      { label:"🔥 Liderliği üstlen, takımı sırtla", sub:"Derbinin adamı sen ol.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; acc.followersDelta-=rnd(100,300); }
+          else if(roll<=4){ acc.repDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=3; acc.followersDelta+=rnd(300,800); }
+        },
+        outcomes:{bad:"Baskı çökertti. Derbi kaybedildi, sen suçlandın.",ok:"Derbiyi sürükledin, yeterliydi.",good:"Derbi efsanesi oldun! Şehir seni konuşuyor."}
+      },
+      { label:"🧘 Sessiz hazırlan, sahada konuş", sub:"Gereksiz baskı alma, işine bak.",
+        applyFn(acc,roll){
+          if(roll<=2){ /* sessiz kaldı, etki yok */ }
+          else if(roll<=4){ acc.repDelta+=1; acc.followersDelta+=rnd(50,150); }
+          else { acc.ratingDelta+=1; acc.repDelta+=2; acc.followersDelta+=rnd(150,400); }
+        },
+        outcomes:{bad:"Sıradan bir derbi geçti.",ok:"Temiz oyun oynadın, takdir topladın.",good:"Kritik anda kritik katkı. Derbi senindi."}
+      }
+    ]
+  },
+
+  {
+    id:"kritik_penaltı", cat:"saha",
+    title:"🦵 Kritik Penaltı",
+    descs:[
+      "90. dakika, 1-0 geridesiniz. Kaptan sana döndü.",
+      "Uzatmada goldeniz ve penaltı kazandık. Herkes sana bakıyor.",
+      "Son şans. Kupa finali. Penaltı noktası. Karar senin."
+    ],
+    choices:[
+      { label:"⚽ Al topu, üstlen", sub:"Kahraman ya da günah keçisi — ikisi de sen.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=2; acc.followersDelta-=rnd(200,500); }
+          else if(roll<=4){ acc.repDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=4; acc.followersDelta+=rnd(500,1200); }
+        },
+        outcomes:{bad:"Penaltıyı kaçırdın. Sosyal medya yıkıldı.",ok:"Golle eşitledin. Takım kurtuldu.",good:"Son saniye gol! Şehir seni omuzlarda taşıdı."}
+      },
+      { label:"🙈 Tecrübeli arkadaşına bırak", sub:"Bazen en büyük cesaret çekilmektir.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; }
+          else if(roll<=4){ /* nothing */ }
+          else { acc.repDelta+=1; acc.followersDelta+=rnd(50,150); }
+        },
+        outcomes:{bad:"O da kaçırdı. 'Neden sen atmadın' dediler.",ok:"Arkadaşın attı, geçti.",good:"Doğru karar dediler. Ekip oyuncusu imajın güçlendi."}
+      }
+    ]
+  },
+
+  {
+    id:"pozisyon_değişikliği", cat:"saha",
+    title:"🔄 Pozisyon Değişikliği",
+    descs:[
+      "Hoca 'bu sezon seni farklı bir rolde deneyeceğim' dedi.",
+      "Kamp hazırlıkları değişiklikle başladı. Hoca seni bambaşka bir yerde görüyor.",
+      "Taktik toplantısında adın farklı bir yerde yazıyordu. Şimdi karar anı."
+    ],
+    choices:[
+      { label:"💪 Dene, yeni role uyum sağla", sub:"Esnekliğini kanıtla.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.ratingDelta-=1; acc.matchesPenalty+=rnd(1,2); }
+          else if(roll<=4){ acc.ratingDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=2; acc.formMult+=0.04; }
+        },
+        outcomes:{bad:"Yeni rol sana uymadı. Zorlu bir süreç.",ok:"Adapte oldun, işe yaradı.",good:"Çok yönlülüğün herkesi şaşırttı. Hoca'nın gözdesi oldun."}
+      },
+      { label:"🗣️ Konuş, kendi pozisyonunu iste", sub:"Bildiğin yerde oyna.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=2; acc.matchesPenalty+=rnd(1,3); }
+          else if(roll<=4){ /* nothing */ }
+          else { acc.repDelta+=1; acc.formMult+=0.03; }
+        },
+        outcomes:{bad:"Hoca bunu kişisel algıladı. Banka düştün.",ok:"Anlaştınız, eski pozisyonunda kaldın.",good:"İsyanın saygı gördü. Hoca planını değiştirdi."}
+      }
+    ]
+  },
+
+  {
+    id:"hat_trick_şansı", cat:"saha",
+    title:"⚽ Hat-Trick Fırsatı",
+    descs:[
+      "İki golün var, maçın 70. dakikası. Bir tane daha ve tarih yazıyorsun.",
+      "Hoca 'sen orada daha fazla gol atabilirsin, ama ekibi de düşün' dedi.",
+      "Tribün seni bekliyor. Üçüncü golle bu sezonun adamı olabilirsin."
+    ],
+    choices:[
+      { label:"🏹 Her pozisyonda şut çek", sub:"Bu gece senin gecen.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; acc.formMult-=0.02; }
+          else if(roll<=4){ acc.ratingDelta+=1; acc.repDelta+=1; }
+          else { acc.ratingDelta+=2; acc.repDelta+=4; acc.followersDelta+=rnd(400,900); }
+        },
+        outcomes:{bad:"Bencilce oyun takımı bozdu. Hat-trick de olmadı.",ok:"İkinci gol yeterliydi, üçüncü gelmedi.",good:"Hat-trick! Sezonun rötar oyuncusu sen oldun."}
+      },
+      { label:"🤝 Takım oyunu oyna, asist yap", sub:"Toplam skor daha önemli.",
+        applyFn(acc,roll){
+          if(roll<=2){ /* nothing */ }
+          else if(roll<=4){ acc.repDelta+=2; acc.formMult+=0.02; }
+          else { acc.ratingDelta+=1; acc.repDelta+=3; acc.followersDelta+=rnd(150,400); }
+        },
+        outcomes:{bad:"Fırsatı geçirdin ama takım yine de kazandı.",ok:"Asistinle maçı kapattın. Takım takdir etti.",good:"Fedakarlığın konuşuldu. 'Gerçek kaptan böyle davranır' dediler."}
+      }
+    ]
+  },
+
+  {
+    id:"hakem_kararı", cat:"saha",
+    title:"🟥 Hakem Skandalı",
+    descs:[
+      "Açık bir hata. Hakem seni gördü ama görmedi. Tribün kaynıyor.",
+      "Penaltı verilmedi, kırmızı çıkarılmadı. Her şey gözümüzün önünde oldu.",
+      "Maçın seyrini değiştiren yanlış karar. Reaksiyon an meselesi."
+    ],
+    choices:[
+      { label:"😤 Tepkini göster, hakeme git", sub:"Bu sessizce kabul edilemez.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.matchesPenalty+=rnd(1,2); acc.repDelta-=1; }
+          else if(roll<=4){ acc.repDelta+=1; }
+          else { acc.repDelta+=2; acc.followersDelta+=rnd(150,400); }
+        },
+        outcomes:{bad:"Sarı kart gördün, bir maç ceza aldın.",ok:"Tepkin kayıt altında kaldı, geçti.",good:"Cesaretini alkışladılar. Taraftar seni bağrına bastı."}
+      },
+      { label:"🧘 Sakin kal, oyuna devam et", sub:"Hakem kararını sahada cevapla.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.formMult-=0.03; }
+          else if(roll<=4){ /* nothing */ }
+          else { acc.ratingDelta+=1; acc.repDelta+=2; }
+        },
+        outcomes:{bad:"Öfke içinde oyun bozuldu, konsantrasyon gitti.",ok:"Sakin kaldın, profesyonelce davrandın.",good:"Soğukkanlılığın takdir gördü. Maçı döndürdün."}
+      }
+    ]
+  },
+
+  {
+    id:"küme_düşme_hattı", cat:"saha",
+    title:"⚠️ Küme Düşme Hattı",
+    descs:[
+      "Takım son sıralarda. Yönetim 'herkes için ağır sezon' dedi.",
+      "Seyirciler bile ümidini kesmeye başladı. Soyunma odası karmakarışık.",
+      "Ligi kurtarmak için her puana muhtaçsınız. Hoca baskı altında."
+    ],
+    choices:[
+      { label:"🔥 Liderliği üstlen, takımı topla", sub:"Kriz anı gerçek liderler içindir.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.ratingDelta-=1; acc.repDelta-=1; }
+          else if(roll<=4){ acc.repDelta+=2; acc.formMult+=0.02; }
+          else { acc.ratingDelta+=1; acc.repDelta+=4; acc.followersDelta+=rnd(200,600); }
+        },
+        outcomes:{bad:"Omuzladın ama kurtaramadın. Küme düştünüz.",ok:"Takımı ayakta tutmak için her şeyi verdin.",good:"Son hafta mucizesi! Takımı sen kurtardın."}
+      },
+      { label:"🎯 Kendi performansına odaklan", sub:"Herkes kendine bakmalı şu an.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=2; acc.followersDelta-=rnd(100,300); }
+          else if(roll<=4){ acc.ratingDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=1; }
+        },
+        outcomes:{bad:"'Gemide delik açıyordu' dediler. Taraftar seni ıslıkladı.",ok:"Kişisel performansın iyiydi, takım battı.",good:"Parladın, takım battı ama sen teklifleri topladın."}
+      }
+    ]
+  },
+
+  {
+    id:"kaptanlık_kolu", cat:"saha",
+    title:"🧢 Kaptanlık Teklifi",
+    descs:[
+      "Hoca seni yanına çekti: 'Bu sezon kaptanlık kolunu sana vermek istiyorum.'",
+      "Eski kaptan gitti. Takım seni işaret ediyor.",
+      "Yönetim seni soyunma odasının lideri olarak görüyor. Karar senin."
+    ],
+    choices:[
+      { label:"🦁 Kabul et, sorumluluğu üstlen", sub:"Takımın sesi sen ol.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; acc.formMult-=0.02; }
+          else if(roll<=4){ acc.repDelta+=2; }
+          else { acc.ratingDelta+=1; acc.repDelta+=3; acc.formMult+=0.04; }
+        },
+        outcomes:{bad:"Sorumluluk omuzlarını yordu, performans düştü.",ok:"Kolunu taktın, takım saygı gösterdi.",good:"Doğal lider olduğunu sahada ve soyunma odasında kanıtladın."}
+      },
+      { label:"🙏 Reddet, sahaya odaklan", sub:"Kaptanlık değil, performans.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; }
+          else if(roll<=4){ acc.ratingDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=1; }
+        },
+        outcomes:{bad:"'Sorumluluktan kaçıyor' dediler.",ok:"Alçakgönüllülüğün takdir gördü.",good:"Sahada öyle oynadın ki kol olmadan zaten kaptan gibiydın."}
+      }
+    ]
+  },
+
+  /* ═══════════════════ MEDYA ═══════════════════ */
+  {
+    id:"viral_an", cat:"medya",
+    title:"📱 Viral An",
+    descs:[
+      "Antrenmandan bir video sosyal medyayı salladı. Herkes izliyor.",
+      "Maç sonrası bir görüntün milyonlarca izlenmeye ulaştı.",
+      "Soyunma odasından sızan bir video trend oldu. Telefon susmak bilmiyor."
+    ],
+    choices:[
+      { label:"🎬 Trende bin, etkileş", sub:"Anı değerlendir, görünürlüğü artır.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.ratingDelta-=1; acc.followersDelta+=rnd(100,300); }
+          else if(roll<=4){ acc.followersDelta+=rnd(300,700); }
+          else { acc.repDelta+=1; acc.followersDelta+=rnd(600,1400); }
+        },
+        outcomes:{bad:"Dikkat dağıldı, performans etkilendi. Takipçi kazandın en azından.",ok:"İyi bir buzz yarattın.",good:"Viral oldu! Yeni marka teklifleri yağdı."}
+      },
+      { label:"😄 Gülüp geç, odaklan", sub:"Sosyal medyayı sen yönetme.",
+        applyFn(acc,roll){
+          if(roll<=2){ /* nothing */ }
+          else if(roll<=4){ acc.followersDelta+=rnd(50,150); }
+          else { acc.ratingDelta+=1; acc.repDelta+=1; }
+        },
+        outcomes:{bad:"Fırsatı kaçırdın ama zarar yok.",ok:"Temkinli yaklaştın, küçük ivme kazandın.",good:"Odaklanman sahaya yansıdı. İnsanlar fark etti."}
+      }
+    ]
+  },
+
+  {
+    id:"röportaj_teklifi", cat:"medya",
+    title:"📰 Röportaj Teklifi",
+    descs:[
+      "Ülkenin en büyük spor dergisi kapak röportajı istiyor.",
+      "Uluslararası bir yayın organı seni 'Türkiye'nin en dikkat çekici oyuncusu' diye tanımlıyor.",
+      "TV kanalı canlı yayın röportajı istiyor. Prime time, milyonlarca izleyici."
+    ],
+    choices:[
+      { label:"🎤 Kabul et, hikayeni anlat", sub:"Kamuoyuyla bağ kur.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; acc.followersDelta-=rnd(100,250); }
+          else if(roll<=4){ acc.repDelta+=1; acc.followersDelta+=rnd(100,250); }
+          else { acc.repDelta+=2; acc.followersDelta+=rnd(300,700); }
+        },
+        outcomes:{bad:"Bir söz yanlış anlaşıldı. Tartışma çıktı.",ok:"Güzel bir röportaj oldu, iyi izlenim bıraktı.",good:"Kapak fotoğrafın gündem oldu. Ülke seni farklı tanıdı."}
+      },
+      { label:"✋ Reddet, gizemini koru", sub:"Az görün, çok konuşulsun.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.followersDelta-=rnd(50,150); }
+          else if(roll<=4){ /* nothing */ }
+          else { acc.repDelta+=1; acc.followersDelta+=rnd(100,300); }
+        },
+        outcomes:{bad:"'Kibirli' dediler, biraz itibar kaybettin.",ok:"Gizem korudun, takipçiler merak etti.",good:"Reddin kendisi haber oldu. Daha çok konuşuldun."}
+      }
+    ]
+  },
+
+  {
+    id:"sponsorluk_teklifi", cat:"medya",
+    title:"💰 Sponsorluk Teklifi",
+    descs:[
+      "Dev bir spor markası yüklü reklam teklifi getirdi.",
+      "Bir teknoloji şirketi yüzünü kullanmak istiyor. Rakam ciddi.",
+      "Ulusal bir banka marka elçisi olmak için seninle görüşmek istiyor."
+    ],
+    choices:[
+      { label:"✅ Kabul et, görünürlüğü artır", sub:"Para ve takipçi, neden olmasın.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.ratingDelta-=1; acc.followersDelta+=rnd(100,300); }
+          else if(roll<=4){ acc.followersDelta+=rnd(200,500); }
+          else { acc.repDelta+=1; acc.followersDelta+=rnd(400,900); }
+        },
+        outcomes:{bad:"Reklam sirkusu dikkati dağıttı.",ok:"Güzel gelir, görünürlük arttı.",good:"Kampanya viral oldu. Markalar kuyruğa girdi."}
+      },
+      { label:"🎯 Reddet, konsantrasyonu koru", sub:"Şimdi değil, önce saha.",
+        applyFn(acc,roll){
+          if(roll<=2){ /* nothing */ }
+          else if(roll<=4){ acc.repDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=1; }
+        },
+        outcomes:{bad:"Para gitti, en azından odaklandın.",ok:"Profesyonelliğin takdir gördü.",good:"Sahadaki odaklanman rekor getirdi. Markalar daha yüksek teklifle döndü."}
+      }
+    ]
+  },
+
+  {
+    id:"sosyal_medya_kavgası", cat:"medya",
+    title:"🔥 Sosyal Medya Fırtınası",
+    descs:[
+      "Eski bir takım arkadaşın seni hedef alan paylaşımlar yaptı.",
+      "Rakip kulübün yıldızı sosyal medyada seni açıkça kışkırttı.",
+      "Bir tweet yanlış anlaşıldı ve herkes iki taraf seçiyor."
+    ],
+    choices:[
+      { label:"⚡ Cevap ver, geri dur", sub:"Sessiz kalmak zayıflık sayılabilir.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=2; acc.followersDelta-=rnd(200,500); }
+          else if(roll<=4){ acc.followersDelta+=rnd(100,300); }
+          else { acc.repDelta+=2; acc.followersDelta+=rnd(300,700); }
+        },
+        outcomes:{bad:"Kavga büyüdü, her iki taraf da zarar gördü.",ok:"Cevabın konuşuldu, konu kapandı.",good:"Zerafetinle cevap verdin. Kamuoyu seni haklı buldu."}
+      },
+      { label:"🤐 Sil, sus, unut", sub:"Sosyal medya yangını kendi söner.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; acc.followersDelta-=rnd(100,200); }
+          else if(roll<=4){ /* nothing */ }
+          else { acc.repDelta+=1; acc.followersDelta+=rnd(50,200); }
+        },
+        outcomes:{bad:"Sessizliğin 'suçlu' gibi algılandı.",ok:"Gürültü geçti, sen yerinde kaldın.",good:"Olgunluğun takdir gördü. Taraftar senin yanında."}
+      }
+    ]
+  },
+
+  {
+    id:"belgesel_teklifi", cat:"medya",
+    title:"🎬 Belgesel Teklifi",
+    descs:[
+      "Bir yapımcı hayat hikayeni belgesel yapmak istiyor.",
+      "Uluslararası bir platform 'kariyer hikayeni dünyayla paylaşalım' dedi.",
+      "Yönetmen seni 6 ay boyunca kameraya çekmek istiyor. Her yeri, her anı."
+    ],
+    choices:[
+      { label:"📽️ Kabul et, dünyaya açıl", sub:"Hikayeni herkes duysun.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.ratingDelta-=1; acc.repDelta-=1; }
+          else if(roll<=4){ acc.repDelta+=1; acc.followersDelta+=rnd(200,500); }
+          else { acc.repDelta+=3; acc.followersDelta+=rnd(600,1500); }
+        },
+        outcomes:{bad:"Kameralar hayatını karıştırdı. Konsantrasyon bozuldu.",ok:"Belgesel ilgi gördü, tanınırlık arttı.",good:"Film ödül aldı! Artık sadece futbolcu değil, bir fenomensin."}
+      },
+      { label:"🚫 Reddet, mahremiyeti koru", sub:"Bazı şeyler kamera için değil.",
+        applyFn(acc,roll){
+          if(roll<=2){ /* nothing */ }
+          else if(roll<=4){ acc.repDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=1; }
+        },
+        outcomes:{bad:"Fırsatı kaçırdın ama odaklanma bozulmadı.",ok:"Kişisel sınırlarını korudun.",good:"'Mahremiyete saygı duyuyor' dediler. İtibarın arttı."}
+      }
+    ]
+  },
+
+  {
+    id:"ödül_adaylığı", cat:"medya",
+    title:"🏅 Ödül Adaylığı",
+    descs:[
+      "Sezonun en iyi oyuncusu listesinde adın var. Medya seni favoriler arasında gösteriyor.",
+      "Yılın futbolcusu ödülüne aday seçildin. Tanınırlık zirveye çıktı.",
+      "Uluslararası bir organizasyon seni aday gösterdi. Rakamlar konuşuluyor."
+    ],
+    choices:[
+      { label:"🎤 Aktif ol, kampanya yür", sub:"Oy topla, görünür ol.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; acc.followersDelta-=rnd(100,300); }
+          else if(roll<=4){ acc.followersDelta+=rnd(200,600); acc.repDelta+=1; }
+          else { acc.repDelta+=3; acc.followersDelta+=rnd(500,1200); }
+        },
+        outcomes:{bad:"Çok yoğun kampanya 'açgözlü' izlenimi yarattı.",ok:"Görünürlük arttı, ödül gelmedi ama ismin kalıcı oldu.",good:"Ödülü kazandın! Kariyer zirvesi bu an."}
+      },
+      { label:"🙂 Süreci sahaya bırak", sub:"Oyna, gerisini unutt.",
+        applyFn(acc,roll){
+          if(roll<=2){ /* nothing */ }
+          else if(roll<=4){ acc.repDelta+=2; acc.followersDelta+=rnd(100,300); }
+          else { acc.ratingDelta+=1; acc.repDelta+=2; acc.followersDelta+=rnd(200,500); }
+        },
+        outcomes:{bad:"Ödül başkasına gitti, sen habersiz oynuyordun.",ok:"Alçakgönüllü tavrın takdir gördü.",good:"'En kibar aday' diyerek seni kapağa taşıdılar."}
+      }
+    ]
+  },
+
+  {
+    id:"rakip_kışkırtması", cat:"medya",
+    title:"😤 Rakip Provokasyonu",
+    descs:[
+      "Rakip takımın yıldızı seni basın toplantısında hedef gösterdi.",
+      "Bir rakip oyuncu 'onun devri bitti' dedi. Herkes senin tepkini bekliyor.",
+      "Rakip hoca 'bu maçta onu durdurmak çok zor olmaz' dedi."
+    ],
+    choices:[
+      { label:"🗣️ Mikrofon önünde cevapla", sub:"Konuş, saha dışında da savaş.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=2; acc.followersDelta-=rnd(100,300); }
+          else if(roll<=4){ acc.repDelta+=1; acc.followersDelta+=rnd(100,300); }
+          else { acc.repDelta+=3; acc.followersDelta+=rnd(300,700); }
+        },
+        outcomes:{bad:"Söyleşi kontrolden çıktı. Kötü görüntü verdin.",ok:"Cevabın yeterli, konu kapandı.",good:"Güçlü bir açıklama yaptın. Kamuoyu seni tebrik etti."}
+      },
+      { label:"⚽ Cevabı sahada ver", sub:"En iyi cevap performanstır.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.formMult-=0.03; }
+          else if(roll<=4){ acc.ratingDelta+=1; acc.repDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=4; acc.followersDelta+=rnd(400,1000); }
+        },
+        outcomes:{bad:"Öfke odağı bozdu. Maçta kaybolup gittin.",ok:"Sessizce iyi oynadın. Yeterli.",good:"Rakibi hem sahada hem kamuoyu önünde mahcup ettin."}
+      }
+    ]
+  },
+
+  /* ═══════════════════ KİŞİSEL ═══════════════════ */
+  {
+    id:"gece_hayatı", cat:"kişisel",
+    title:"🌙 Gece Hayatı",
+    descs:[
+      "Bir fotoğraf düştü. Doğru mu değil mi karışık.",
+      "Gece kulübünde çekilmiş görüntüler sosyal medyada dolaşıyor.",
+      "Maçtan önceki gece dışarıda görüldüğün iddia ediliyor."
+    ],
+    choices:[
+      { label:"😴 Hayır de, evde kal", sub:"Erken uyu, riske girme.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; }
+          else if(roll<=4){ /* nothing */ }
+          else { acc.ratingDelta+=1; }
+        },
+        outcomes:{bad:"'Takımdan kopuk' dediler.",ok:"Olaysız geçti.",good:"Dinginliğin profesyonellik olarak konuşuldu."}
+      },
+      { label:"🥂 Takımla ol, katıl", sub:"Kimya önemli, beraber ol.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.ratingDelta-=1; acc.repDelta-=2; acc.followersDelta-=rnd(200,500); }
+          else if(roll<=4){ acc.repDelta+=1; }
+          else { acc.repDelta+=2; acc.followersDelta+=rnd(100,350); acc.formMult+=0.03; }
+        },
+        outcomes:{bad:"Görüntüler yayıldı. Skandal oldu.",ok:"Geceyi savuşturdun, takım kimyası iyileşti.",good:"Harika bir gece! Takım ruhu tavana vurdu."}
+      }
+    ]
+  },
+
+  {
+    id:"motivasyon_krizi", cat:"kişisel",
+    title:"💭 Motivasyon Krizi",
+    descs:[
+      "Antrenman öncesi soyunma odasında oturuyorsun. 'Neden?' sorusu aklından gitmiyor.",
+      "Uzun bir sezon. Yorgunluk değil, içten bir boşluk hissediyorsun.",
+      "Bu mesleğe neden başladığını hatırlamak zorlaşıyor."
+    ],
+    choices:[
+      { label:"🧠 Psikologla görüş", sub:"Kafanı topla, profesyonel yardım al.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.formMult-=0.02; }
+          else if(roll<=4){ acc.formMult+=0.03; }
+          else { acc.ratingDelta+=1; acc.repDelta+=1; acc.formMult+=0.05; }
+        },
+        outcomes:{bad:"Süreç zaman aldı, sezon başı zorlandın.",ok:"Zihinsel olarak biraz toplandın.",good:"Kafanı toparlamak sahadaki en iyi katkın oldu."}
+      },
+      { label:"🏃 Antrenmana daldır kendini", sub:"Çalışmak en iyi ilaç.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.ratingDelta-=1; acc.matchesPenalty+=rnd(1,2); }
+          else if(roll<=4){ acc.ratingDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=2; acc.formMult+=0.04; }
+        },
+        outcomes:{bad:"Aşırı yüklendin, beden itiraz etti.",ok:"Çalışma ritmi motivasyonu geri getirdi.",good:"Çalışmak seni yeniden yaktı. Form geri döndü."}
+      }
+    ]
+  },
+
+  {
+    id:"aile_baskısı", cat:"kişisel",
+    title:"👨‍👩‍👧 Aile Baskısı",
+    descs:[
+      "Ailen 'eve dön, birlikte olalım' diyor. Memleket çekiyor.",
+      "Eşin 'artık yeter, biz de varız' dedi. Ev hayatı geriliyor.",
+      "Yaşlı baban 'daha ne kadar oynayacaksın' diye sordu. Cevap yok."
+    ],
+    choices:[
+      { label:"🏠 Aileyle zaman geçir, izin al", sub:"Önce insan, sonra futbolcu.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.matchesPenalty+=rnd(1,3); }
+          else if(roll<=4){ acc.repDelta+=1; acc.formMult+=0.02; }
+          else { acc.ratingDelta+=1; acc.repDelta+=2; acc.formMult+=0.05; }
+        },
+        outcomes:{bad:"Maçları kaçırdın ama zihin dinlendi.",ok:"Denge buldun, hem aile hem saha iyileşti.",good:"Dinlenmiş zihin sahada patlama yaptı."}
+      },
+      { label:"💪 Kararlılığını göster, devam et", sub:"Ailenle konuş ama vazgeçme.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.formMult-=0.04; acc.repDelta-=1; }
+          else if(roll<=4){ /* nothing */ }
+          else { acc.ratingDelta+=1; acc.repDelta+=1; }
+        },
+        outcomes:{bad:"Ev gerginliği sahaya sızdı.",ok:"Zor ama dengeli bir dönemi atlattın.",good:"Ailen de anladı. Destek güçlendi, sen de güçlendin."}
+      }
+    ]
+  },
+
+  {
+    id:"batıl_inanç", cat:"kişisel",
+    title:"🧿 Uğursuzluk mu?",
+    descs:[
+      "Maç öncesi ritüelin bozuldu. Her şey ters gidiyor gibi.",
+      "Özel çorapların kayboldu. Takım arkadaşları gülüyor ama sen emin değilsin.",
+      "Son üç maçta aynı hatayı yapıyorsun. Bir şeylerin yanlış olduğunu hissediyorsun."
+    ],
+    choices:[
+      { label:"🔮 Yeni bir ritüel bul", sub:"Kafanı toplamak için bir şeye ihtiyacın var.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.formMult-=0.03; }
+          else if(roll<=4){ acc.formMult+=0.03; }
+          else { acc.ratingDelta+=1; acc.formMult+=0.05; }
+        },
+        outcomes:{bad:"Yeni ritüel de inanç getirmedi. Sezon sancılı başladı.",ok:"Kafanda bir şey yerine oturdu. İyice geçti.",good:"Yeni ritüel mucize gibi çalıştı. Formun fırladı."}
+      },
+      { label:"😂 Geç, anlamsız şeylere takılma", sub:"Ritüeller değil, çalışma kazandırır.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.formMult-=0.02; }
+          else if(roll<=4){ acc.ratingDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=1; }
+        },
+        outcomes:{bad:"'Uğursuzluk' dediğin kafana yerleşti.",ok:"Mantıklı yaklaştın, geçti.",good:"Sadece oyunu düşündün. Performans kendiliğinden geldi."}
+      }
+    ]
+  },
+
+  {
+    id:"eski_rakip", cat:"kişisel",
+    title:"👤 Eski Rakip Döndü",
+    descs:[
+      "Yıllardır rakip olduğun oyuncu aynı lige transfer oldu.",
+      "Geçmişte seni hayal kırıklığına uğratan biri tekrar karşında.",
+      "Eski kulübün sana karşı en iyi silahı geri döndü."
+    ],
+    choices:[
+      { label:"🤝 Geçmişi unut, sporculuk yap", sub:"Rakip ama düşman değil.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.formMult-=0.02; }
+          else if(roll<=4){ acc.repDelta+=2; }
+          else { acc.repDelta+=3; acc.followersDelta+=rnd(100,300); }
+        },
+        outcomes:{bad:"Geçmişin gölgesi konsantrasyonu böldü.",ok:"Olgun davrandın, takdir gördün.",good:"Karşılaşma harika bir rekabete dönüştü. İkiniz de kazandınız."}
+      },
+      { label:"⚔️ Bu sezon hesaplaşma zamanı", sub:"Sahada kim daha iyi, görelim.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; acc.followersDelta-=rnd(100,200); }
+          else if(roll<=4){ acc.ratingDelta+=1; }
+          else { acc.ratingDelta+=2; acc.repDelta+=2; acc.followersDelta+=rnd(300,700); }
+        },
+        outcomes:{bad:"Rekabet seni tüketti. Form düştü.",ok:"Güzel bir rekabet oldu, her ikisi de iyi oynadı.",good:"Rekabetin seni doruk noktasına taşıdı. Sezonun en iyi dönemindesin."}
+      }
+    ]
+  },
+
+  {
+    id:"tükenme_noktası", cat:"kişisel",
+    title:"😮‍💨 Tükenme Noktası",
+    descs:[
+      "Sezon çok yoğun geçti. Vücut ve zihin çığlık atıyor.",
+      "Antrenman sonrası soyunma odasında uyuyakaldın. Herkes endişeli.",
+      "Fizyo 'birkaç gün istirahat şart' dedi. Ama takvim dolu."
+    ],
+    choices:[
+      { label:"😴 Dinlen, birkaç günü sil", sub:"Vücudunu dinle.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.matchesPenalty+=rnd(1,2); }
+          else if(roll<=4){ acc.formMult+=0.04; }
+          else { acc.ratingDelta+=1; acc.repDelta+=1; acc.formMult+=0.06; }
+        },
+        outcomes:{bad:"İstirahat uzayınca önemli maçları kaçırdın.",ok:"Dinlenmek işe yaradı, tempo geri geldi.",good:"Yeniden şarj oldun. Sezonun ikinci yarısı patlama yaptın."}
+      },
+      { label:"💊 Acıyı yut, oynamaya devam", sub:"Takım sana ihtiyaç duyuyor.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.ratingDelta-=2; acc.matchesPenalty+=rnd(2,4); }
+          else if(roll<=4){ acc.ratingDelta-=1; }
+          else { acc.repDelta+=2; acc.followersDelta+=rnd(150,400); }
+        },
+        outcomes:{bad:"Vücut itiraz etti. Ciddi bir sakatlık kapıya dayandı.",ok:"Zorladın ama atlattın.",good:"Fedakarlığın efsane oldu. Takım senin için döktürdü."}
+      }
+    ]
+  },
+
+  {
+    id:"sosyal_sorumluluk", cat:"kişisel",
+    title:"🤲 Sosyal Sorumluluk",
+    descs:[
+      "Bir hayır kurumu seni yüzü olmak için davet etti.",
+      "Deprem bölgesinde gönüllü çalışma fırsatı var. Medya da orada olacak.",
+      "Gençlere futbol okulu açma teklifi geldi. Zaman ve enerji gerektirir."
+    ],
+    choices:[
+      { label:"💚 Katıl, topluma katkı ver", sub:"Futbol dışında da bir insansın.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.matchesPenalty+=rnd(1,2); }
+          else if(roll<=4){ acc.repDelta+=3; acc.followersDelta+=rnd(200,500); }
+          else { acc.repDelta+=4; acc.followersDelta+=rnd(500,1200); }
+        },
+        outcomes:{bad:"Zaman azaldı, hem sahadaki hem sosyal takvim yordu.",ok:"Toplumda olumlu iz bıraktın.",good:"Medya seni 'insanlığını kaybetmemiş sporcu' diye tanımladı."}
+      },
+      { label:"🎯 Şu an mümkün değil, odaklan", sub:"Sezon bitmeden başka sorumluluk olmaz.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; }
+          else if(roll<=4){ acc.ratingDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=1; }
+        },
+        outcomes:{bad:"'Umursamaz' dediler. Küçük itibar kaybı.",ok:"Sezona odaklandın, anlayışla karşılandı.",good:"Vaktini sahaya yatırdın. Performans zirveye çıktı."}
+      }
+    ]
+  },
+
+  /* ═══════════════════ KULÜP ═══════════════════ */
+  {
+    id:"taraftar_baskısı", cat:"kulüp",
+    title:"🧨 Taraftar Baskısı",
+    descs:[
+      "Sosyal medya kaynıyor. Bir kısım seni yiyor.",
+      "Tribünden yuhalamalar başladı. İsmin tezahüratlarda geçiyor, ama olumsuz.",
+      "Taraftar grubu kulübe dilekçe vermiş. Seni kadro dışı istiyorlar."
+    ],
+    choices:[
+      { label:"🤫 Sessiz kal, sadece oyna", sub:"Cevap verme, sahada konuş.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; acc.followersDelta-=rnd(100,200); }
+          else if(roll<=4){ /* geçti */ }
+          else { acc.repDelta+=1; acc.followersDelta+=rnd(50,150); }
+        },
+        outcomes:{bad:"Sessizliğin zayıflık olarak yorumlandı.",ok:"Dikkate almadın, geçti.",good:"Cevabı sahada verdin. Tribün döndü."}
+      },
+      { label:"🎤 Basın açıklaması yap", sub:"Konuş, meseleyi kapat.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=2; acc.followersDelta-=rnd(300,600); }
+          else if(roll<=4){ acc.repDelta-=1; }
+          else { acc.repDelta+=3; acc.followersDelta+=rnd(200,500); }
+        },
+        outcomes:{bad:"Açıklama ters tepti. Kriz büyüdü.",ok:"Biraz yumuşadı ama tam kapanmadı.",good:"Cesur konuşma hayran bıraktı. Rep tavan yaptı."}
+      }
+    ]
+  },
+
+  {
+    id:"transfer_dedikodusu", cat:"kulüp",
+    title:"🕵️ Transfer Dedikodusu",
+    descs:[
+      "Menajer söylentileri var. Kulüp de tedirgin.",
+      "Bir gazeteci 'büyük kulüpler devrede' başlığı attı. Kulüp yönetimi sinirli.",
+      "Sosyal medyada 'gidecek mi kalacak mı' anketleri başladı."
+    ],
+    choices:[
+      { label:"🤝 Sadık kal, uzat istediğini söyle", sub:"Kulübe güven ver.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; }
+          else if(roll<=4){ acc.repDelta+=1; }
+          else { acc.repDelta+=2; acc.followersDelta+=rnd(80,200); }
+        },
+        outcomes:{bad:"Kulüp inanmadı, ilişki gerildi.",ok:"Mesajı aldılar, şimdilik sakin.",good:"Sadakatin konuşuldu. İtibarın arttı."}
+      },
+      { label:"🔍 Alternatifleri araştır", sub:"Ne teklif var, bak hiç olmazsa.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.ratingDelta-=1; acc.repDelta-=1; }
+          else if(roll<=4){ /* neutral */ }
+          else { acc.repDelta+=2; acc.followersDelta+=rnd(150,400); }
+        },
+        outcomes:{bad:"Dikkat dağıldı, performans düştü. Kulüp sinirli.",ok:"Baktın, bir şey çıkmadı, devam.",good:"İlgin piyasayı heyecanlandırdı — değerin konuşulmaya başlandı."}
+      }
+    ]
+  },
+
+  {
+    id:"hoca_güveni", cat:"kulüp",
+    title:"🤝 Hoca Güveni",
+    descs:[
+      "Hoca bu sezon sana özel bir plan yapıyor.",
+      "Taktik toplantısında hoca 'sen bu takımın kalbi olacaksın' dedi.",
+      "Hoca sezon öncesi seni yanına çekti: 'Sana güveniyorum, sistemin merkezindesin.'"
+    ],
+    choices:[
+      { label:"🙏 Hocanın planına güven", sub:"Sisteme gir, rol ne olursa olsun.",
+        applyFn(acc,roll){
+          if(roll<=2){ /* nothing */ }
+          else if(roll<=4){ acc.repDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=1; }
+        },
+        outcomes:{bad:"Plan tutmadı ama sen yerindeydin.",ok:"Sisteme iyi adapte oldun.",good:"Hocanın planı mükemmel işledi. Sen de parladın."}
+      },
+      { label:"⭐ Daha büyük rol iste", sub:"Bu senin sezonun, iddiasız olma.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; acc.matchesPenalty+=rnd(1,3); }
+          else if(roll<=4){ /* neutral */ }
+          else { acc.ratingDelta+=1; acc.repDelta+=2; acc.formMult+=0.04; }
+        },
+        outcomes:{bad:"Hoca seni bankta bıraktı. Gergin hava.",ok:"Anlaştınız, orta yol buldunuz.",good:"İddia kazandı! Hoca seni merkeze koydu."}
+      }
+    ]
+  },
+
+  {
+    id:"yeni_teknik_direktör", cat:"kulüp",
+    title:"🧑‍🏫 Yeni Teknik Direktör",
+    descs:[
+      "Eski hoca gitti. Yeni adam 'herkes sıfırdan başlıyor' dedi.",
+      "Kulüp yabancı bir hoca getirdi. Farklı bir futbol anlayışı, farklı beklentiler.",
+      "Yönetim sürpriz bir isim açıkladı. Soyunma odası şaşkın, hoca ise kararlı."
+    ],
+    choices:[
+      { label:"💼 Özel toplantı iste, kendini tanıt", sub:"Proaktif ol, ilk izlenimi sen yönet.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; acc.matchesPenalty+=rnd(1,2); }
+          else if(roll<=4){ acc.repDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=2; acc.formMult+=0.03; }
+        },
+        outcomes:{bad:"Hoca seni aceleyle yargıladı, ilişki gergin başladı.",ok:"İyi bir başlangıç yaptınız.",good:"Hoca seni sistemin merkezine koydu."}
+      },
+      { label:"⏳ Sabret, performansla kanıtla", sub:"Konuşma, sahada göster.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.matchesPenalty+=rnd(2,4); }
+          else if(roll<=4){ /* neutral */ }
+          else { acc.ratingDelta+=1; acc.repDelta+=1; }
+        },
+        outcomes:{bad:"Hoca seni görmedi, uzun süre bankta kaldın.",ok:"Yavaş başladın ama yerine oturdun.",good:"Sabrın ödüllendirildi. Hoca seni keşfetti."}
+      }
+    ]
+  },
+
+  {
+    id:"milli_takım_kapısı", cat:"kulüp",
+    title:"🌍 Milli Takım Kapısı",
+    descs:[
+      "Milli takım teknik direktörü seni bizzat aradı.",
+      "Milli takım aday listesi açıklandı. İsmin var — ama performans devam etmeli.",
+      "Seçici 'bir sonraki turnuva için seni düşünüyoruz' dedi. Top sende."
+    ],
+    choices:[
+      { label:"🚀 Her maçı milli forma için oyna", sub:"Kendini kanıtlamak için her şeyini ver.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.ratingDelta-=1; acc.formMult-=0.03; }
+          else if(roll<=4){ acc.repDelta+=1; acc.followersDelta+=rnd(100,250); }
+          else { acc.ratingDelta+=1; acc.repDelta+=3; acc.followersDelta+=rnd(400,1000); }
+        },
+        outcomes:{bad:"Aşırı zorlama yorgunluk getirdi. Forma düştü.",ok:"Dikkat çektin ama seçilmedin, bu sefer.",good:"Milli forma giydin! Ülke seni tanıdı."}
+      },
+      { label:"🎯 Kulübe odaklan", sub:"Kendi yolunda yürü, acele etme.",
+        applyFn(acc,roll){
+          if(roll<=2){ /* nothing */ }
+          else if(roll<=4){ acc.repDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=2; acc.followersDelta+=rnd(100,300); }
+        },
+        outcomes:{bad:"Fırsat kaçtı, bu dönem milli takım yok.",ok:"Kulübünde istikrar korudun.",good:"Odaklanman kulüpte harika performans getirdi. Milli takım zaten çağırdı."}
+      }
+    ]
+  },
+
+  {
+    id:"genç_rakip", cat:"kulüp",
+    title:"👶 Genç Rakip",
+    descs:[
+      "Takıma 18 yaşında bir deha geldi. Senin pozisyonunu istiyor.",
+      "Akademiden yetiştirilen genç, sezon başında kadroya alındı. Hoca onu sever gibi.",
+      "Transfer edilen genç oyuncunun sana benzetilmesi rahatsız ediyor."
+    ],
+    choices:[
+      { label:"🤝 Rehber ol, deneyimini paylaş", sub:"Büyük insan olduğunu göster.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.matchesPenalty+=rnd(1,3); }
+          else if(roll<=4){ acc.repDelta+=2; }
+          else { acc.repDelta+=3; acc.followersDelta+=rnd(100,300); }
+        },
+        outcomes:{bad:"Genç adam pozisyonunu aldı. İyi niyet işe yaramadı.",ok:"İkili uyum yarattı, takım kazandı.",good:"Mentörlüğün konuşuldu. Kulüp seni efsane ilan etti."}
+      },
+      { label:"⚔️ Rekabeti kabul et, yerini koru", sub:"Pozisyonun için savaş.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; acc.matchesPenalty+=rnd(1,2); }
+          else if(roll<=4){ acc.ratingDelta+=1; }
+          else { acc.ratingDelta+=1; acc.repDelta+=2; acc.formMult+=0.04; }
+        },
+        outcomes:{bad:"Gerginlik takım kimyasını bozdu.",ok:"Rekabet ikisini de geliştirdi.",good:"Baskı altında parladın. Hoca seni tercih etti."}
+      }
+    ]
+  },
+
+  {
+    id:"kulüp_mali_krizi", cat:"kulüp",
+    title:"💸 Kulüp Mali Krizi",
+    descs:[
+      "Yönetim maaş ödemelerinde gecikme yaşandığını açıkladı.",
+      "Kulüp borç batağında. Transfer yasağı gündeme geldi.",
+      "Sponsorun çekilmesiyle bütçe yarıya düştü. Soyunma odası gergin."
+    ],
+    choices:[
+      { label:"🤝 Sabret, kulübe destek ol", sub:"Zor günde ayrılmak kolay, kalmak cesaret ister.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; acc.formMult-=0.03; }
+          else if(roll<=4){ acc.repDelta+=2; }
+          else { acc.repDelta+=4; acc.followersDelta+=rnd(200,600); }
+        },
+        outcomes:{bad:"Kulüp battı, sen de batakla boğuştun.",ok:"Sadakatin kulüpte efsaneleşti.",good:"Zor dönemde liderlik ettin. Halk seni sevdi."}
+      },
+      { label:"📋 Sözleşme maddeni kontrol et, çık", sub:"Profesyonel hayatta önce kendin.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=3; acc.followersDelta-=rnd(200,500); }
+          else if(roll<=4){ acc.repDelta-=1; }
+          else { acc.repDelta+=1; acc.followersDelta+=rnd(100,300); }
+        },
+        outcomes:{bad:"'Gemiden ilk kaçan' damgası vuruldu.",ok:"Anlaşılır bulundu, yeni fırsatlar arandı.",good:"Akıllıca hamle. Yeni kulüp daha iyi bir ortam sundu."}
+      }
+    ]
+  },
+
+  {
+    id:"yeni_stadyum", cat:"kulüp",
+    title:"🏟️ Yeni Stadyum",
+    descs:[
+      "Kulübün yeni stadyumu bu sezon açılıyor. İlk maç sana düştü.",
+      "Dev ekran, modern soyunma odası, 60 bin koltuk. İlk gol kimin?",
+      "Şehrin gururu olacak stadın açılış maçında oynayacaksın."
+    ],
+    choices:[
+      { label:"🌟 Özel hazırlan, tarihe geç", sub:"Bu an için doğdun.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.formMult-=0.02; acc.repDelta-=1; }
+          else if(roll<=4){ acc.repDelta+=2; acc.followersDelta+=rnd(100,300); }
+          else { acc.ratingDelta+=1; acc.repDelta+=4; acc.followersDelta+=rnd(500,1200); }
+        },
+        outcomes:{bad:"Baskı altında boğuldun. Açılış hayal kırıklığıydı.",ok:"İyi bir maç çıkardın, stadyum coştu.",good:"İlk golü attın. Stadın tarihi seninle başladı."}
+      },
+      { label:"🧘 Normal maç, fazla düşünme", sub:"Her maç gibi oyna.",
+        applyFn(acc,roll){
+          if(roll<=2){ /* nothing */ }
+          else if(roll<=4){ acc.repDelta+=1; acc.followersDelta+=rnd(50,200); }
+          else { acc.ratingDelta+=1; acc.repDelta+=2; acc.followersDelta+=rnd(150,400); }
+        },
+        outcomes:{bad:"Sıradan bir açılış oldu. Fırsatı kaçırdın.",ok:"Temiz bir performans. Stad coşkusuna katkın oldu.",good:"Sakin kafayla harika oynadın. Tribün seni bağrına bastı."}
+      }
+    ]
+  },
+
+  {
+    id:"soyunma_odası_çatışması", cat:"kulüp",
+    title:"⚡ Soyunma Odası Çatışması",
+    descs:[
+      "Takım arkadaşınla sezon öncesi ciddi bir anlaşmazlık çıktı.",
+      "Soyunma odasında bir tartışma yüksek sesle dinlendi. Tüm takım duydu.",
+      "İki yıldız, iki ego — ve yeterince büyük olmayan bir soyunma odası."
+    ],
+    choices:[
+      { label:"🕊️ Uzlaş, elini uzat", sub:"Takım önce, ego sonra.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=1; acc.formMult-=0.02; }
+          else if(roll<=4){ acc.repDelta+=2; acc.formMult+=0.03; }
+          else { acc.repDelta+=3; acc.formMult+=0.05; }
+        },
+        outcomes:{bad:"Uzlaşma zoraki göründü. Gerilim azalmadı.",ok:"Anlaşmazlık kapandı, takım nefes aldı.",good:"Liderliğin konuşuldu. Takım kimyası fırladı."}
+      },
+      { label:"🛑 Pozisyonunda dur, haksızlığa boyun eğme", sub:"Saygı karşılıklı olmalı.",
+        applyFn(acc,roll){
+          if(roll<=2){ acc.repDelta-=2; acc.matchesPenalty+=rnd(1,3); acc.formMult-=0.03; }
+          else if(roll<=4){ /* nothing */ }
+          else { acc.repDelta+=2; acc.followersDelta+=rnd(100,300); }
+        },
+        outcomes:{bad:"Çatışma büyüdü. Hoca ikisini de bankta bıraktı.",ok:"Mesele kapandı, anlaşmazlık not düşüldü.",good:"Haklı çıktın. Takım seni destekleyince arkadaşın geri adım attı."}
+      }
+    ]
+  }
+
 ];
 
-function diceOutcomeText(roll){
-  if(roll<=2) return `🎲 Zar: ${roll}\nKötü çıktı. Ceza yedin.`;
-  if(roll<=4) return `🎲 Zar: ${roll}\nNötr. Etki yok.`;
-  return `🎲 Zar: ${roll}\nİyi çıktı. Bonus aldın.`;
-}
+function pickDiceEvents(count){
+  const recent = Career.recentEventIds || [];
+  const CATS = ["saha","medya","kişisel","kulüp"];
 
-function applyDiceOutcomeToSeason(acc, roll, ev){
-  // acc: {ratingDelta, repDelta, followersDelta, matchesPenalty, formMult, didRoll6}
-  // v8: sakatlık kartı geldiyse flat -3 rating (sezon başına 1 kez)
-  if(ev && typeof ev.title === "string" && ev.title.includes("Sakatlık")){
-    if(!acc._injApplied){
-      acc.ratingDelta -= 3;
-      acc._injApplied = true;
-    }
+  // Prefer events not seen recently
+  const fresh = DICE_EVENTS.filter(e => !recent.includes(e.id));
+  const pool  = fresh.length >= count ? fresh : DICE_EVENTS;
+
+  const picked   = [];
+  const usedCats = new Set();
+
+  // First pass: one from each category (shuffled)
+  const cats = [...CATS].sort(() => Math.random() - 0.5);
+  for(const cat of cats){
+    if(picked.length >= count) break;
+    const p = pool.filter(e => e.cat === cat && !picked.includes(e));
+    if(p.length){ picked.push(p[Math.floor(Math.random()*p.length)]); usedCats.add(cat); }
   }
-  if(roll<=2){
-    acc.ratingDelta -= rnd(1,2);
-    acc.repDelta -= rnd(1,3);
-    acc.followersDelta -= rnd(80,260);
-    if(rnd(1,100)<=55) acc.matchesPenalty += rnd(1,3);
-    acc.formMult -= 0.04;
-  } else if(roll<=4){
-    // nothing
-  } else {
-    acc.ratingDelta += 1;
-    acc.repDelta += rnd(1,3);
-    acc.followersDelta += rnd(120,380);
-    acc.formMult += 0.04;
-    if(roll===6) acc.didRoll6 = true;
+
+  // Fill remaining slots from any category
+  while(picked.length < count){
+    const p = pool.filter(e => !picked.includes(e));
+    if(!p.length) break;
+    picked.push(p[Math.floor(Math.random()*p.length)]);
   }
+
+  // Update memory (keep last 14)
+  Career.recentEventIds = [...recent, ...picked.map(e=>e.id)].slice(-14);
+
+  return picked;
 }
 
 function runDiceEventsFlow(maxEvents, done){
@@ -827,47 +1738,107 @@ function runDiceEventsFlow(maxEvents, done){
   setTimeout(()=>{
     hideLoader();
 
-    const picked = [];
-    while(picked.length < total){
-      const e = pick(DICE_EVENTS);
-      if(!picked.includes(e)) picked.push(e);
-    }
+    const picked = pickDiceEvents(total);
+
+    // Resolve text variants
+    const resolved = picked.map(ev => ({
+      ...ev,
+      displayDesc: ev.descs[Math.floor(Math.random() * ev.descs.length)]
+    }));
 
     const acc = { ratingDelta:0, repDelta:0, followersDelta:0, matchesPenalty:0, formMult:1.0, didRoll6:false };
     const rolls = [];
 
+    const FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+
     const step = (i)=>{
-      if(i>=picked.length){
-        const sum = rolls.map((r,idx)=>`#${idx+1} ${r.title} → ${r.roll}`).join(" | ");
-        done({count:picked.length, sum, acc});
+      if(i>=resolved.length){
+        const sum = rolls.map((r,idx)=>`#${idx+1} ${r.title} [${r.choice}] → ${r.roll}`).join(" | ");
+        done({count:resolved.length, sum, acc});
         return;
       }
 
-      const ev = picked[i];
+      const ev = resolved[i];
+
       openModal({
         title: ev.title,
-        desc: ev.desc,
+        desc: ev.displayDesc,
         stepIndex: i,
-        stepsTotal: picked.length,
-        foot: "Sezon İçi Olay (Zar)",
-        revealLabel: "ZAR AT 🎲",
-        nextLabel: "DEVAM",
-        initialOutcome: "Zar at… (1–6)",
-        revealFn: ()=>{
-          const roll = rnd(1,6);
-          rolls.push({title: ev.title, roll});
-          applyDiceOutcomeToSeason(acc, roll, ev);
-          return diceOutcomeText(roll);
-        },
-        nextFn: ()=>{
-          // olaylar ard arda gelmesin: araya loader koy
-          showLoader("Devam ediliyor…", "Sezon akıyor…");
-          setTimeout(()=>{
-            hideLoader();
-            step(i+1);
-          }, 650);
-        }
+        stepsTotal: resolved.length,
+        foot: "Sezon İçi Olay",
+        noNext: true,
+        bodyHTML: `
+          <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Nasıl yaklaşıyorsun?</div>
+          <button id="dc0" class="btn full" style="margin-bottom:8px;text-align:left;padding:12px 14px;line-height:1.3">
+            <div style="font-weight:900">${ev.choices[0].label}</div>
+            <div style="font-size:12px;font-weight:400;opacity:.7;margin-top:3px">${ev.choices[0].sub}</div>
+          </button>
+          <button id="dc1" class="btn full secondary" style="text-align:left;padding:12px 14px;line-height:1.3">
+            <div style="font-weight:900">${ev.choices[1].label}</div>
+            <div style="font-size:12px;font-weight:400;opacity:.7;margin-top:3px">${ev.choices[1].sub}</div>
+          </button>
+        `
       });
+
+      setTimeout(()=>{
+        [0,1].forEach(ci=>{
+          const btn = document.getElementById(`dc${ci}`);
+          if(!btn) return;
+          btn.onclick = ()=>{
+            const choice = ev.choices[ci];
+
+            // Seçim butonlarını gizle, zar animasyonunu başlat
+            modalDesc.textContent = `Tercih: ${choice.label}`;
+            modalOutcome.innerHTML = `
+              <div id="_df" style="font-size:52px;text-align:center;margin:8px 0;transition:transform .08s">🎲</div>
+              <div id="_dn" style="font-size:64px;font-weight:1000;text-align:center;color:var(--accent);line-height:1">?</div>
+            `;
+
+            let ticks = 0;
+            const TOTAL = 14;
+            const timer = setInterval(()=>{
+              ticks++;
+              const fake = rnd(1,6);
+              const df = document.getElementById('_df');
+              const dn = document.getElementById('_dn');
+              if(df) df.textContent = FACES[fake-1];
+              if(dn) dn.textContent = fake;
+
+              if(ticks >= TOTAL){
+                clearInterval(timer);
+                const roll = rnd(1,6);
+                rolls.push({title:ev.title, roll, choice:choice.label});
+                choice.applyFn(acc, roll);
+                if(roll===6) acc.didRoll6 = true;
+
+                const txt = roll<=2 ? choice.outcomes.bad
+                          : roll<=4 ? choice.outcomes.ok
+                          : choice.outcomes.good;
+                const col = roll<=2 ? '#ff6b6b' : roll<=4 ? '#ffd93d' : '#6bff8e';
+                const lbl = roll<=2 ? 'KÖTÜ' : roll<=4 ? 'NÖTR' : 'İYİ';
+
+                setTimeout(()=>{
+                  modalOutcome.innerHTML = `
+                    <div style="font-size:52px;text-align:center;margin-bottom:4px">${FACES[roll-1]}</div>
+                    <div style="font-size:56px;font-weight:1000;text-align:center;color:${col};line-height:1;margin-bottom:10px">${roll}</div>
+                    <div style="padding:10px 14px;border-radius:10px;border:1px solid ${col}44;background:${col}14">
+                      <div style="font-size:12px;font-weight:900;color:${col};margin-bottom:5px">${lbl}</div>
+                      <div style="font-size:14px;line-height:1.5">${txt}</div>
+                    </div>
+                  `;
+                  btnNext.textContent = 'DEVAM';
+                  btnNext.classList.remove('hidden');
+                  btnNext.onclick = ()=>{
+                    closeModal();
+                    showLoader("Devam ediliyor…","Sezon akıyor…");
+                    setTimeout(()=>{ hideLoader(); step(i+1); }, 650);
+                  };
+                }, 220);
+              }
+            }, 75);
+          };
+        });
+      }, 50);
     };
 
     step(0);
@@ -1680,11 +2651,6 @@ function applyRatingCaps(){
   // D2 cap
   if(Career.division===2 && Career.rating > 75) Career.rating = 75;
 
-  // 90+ zor: unlocked değilse 90'a yapışsın
-  if(Career.rating > 90 && !Career.memoryFlags.legendaryUnlocked){
-    Career.rating = 90;
-  }
-
   // 99 sadece legendaryUnlocked + çok nadir growth ile
   if(Career.rating > 99) Career.rating = 99;
 }
@@ -1856,9 +2822,9 @@ function simulateSeasonCore(dicePack, mgResult){
 
   // rating delta: harsher drops, harder above 85/90
   let ratingBase;
-  if(perfScore >= 18) ratingBase = rnd(4,6);
-  else if(perfScore >= 15) ratingBase = rnd(2,4);
-  else if(perfScore >= 12) ratingBase = rnd(1,3);
+  if(perfScore >= 18) ratingBase = rnd(2,4);
+  else if(perfScore >= 15) ratingBase = rnd(1,3);
+  else if(perfScore >= 12) ratingBase = rnd(0,2);
   else if(perfScore >= 9) ratingBase = rnd(0,1);
   else if(perfScore >= 7) ratingBase = rnd(-2,0);
   else if(perfScore >= 5) ratingBase = rnd(-4,-2);
@@ -1867,27 +2833,45 @@ function simulateSeasonCore(dicePack, mgResult){
   if(breakout==="BREAKOUT") ratingBase += 1;
   if(breakout==="SLUMP") ratingBase -= 1;
 
-  let ratingDelta = clamp(ratingBase, -6, 7);
+  let ratingDelta = clamp(ratingBase, -6, 5);
 
   // dice rating delta (direct)
   ratingDelta += (diceAcc.ratingDelta||0);
 
-  // mini-game rating delta (+0.5 success / -1.5 fail, accumulated)
-  const mgDelta = mgResult ? mgResult.ratingDelta || 0 : 0;
+  // mini-game rating delta — age compensation: older players gain more / lose less from mini-game
+  let mgDelta = mgResult ? mgResult.ratingDelta || 0 : 0;
+  if(mgResult && Career.age >= 32){
+    if(mgResult.success) mgDelta = Math.max(mgDelta, 1.0);
+    else mgDelta = Math.max(mgDelta, -0.5);
+  } else if(mgResult && Career.age >= 30){
+    if(mgResult.success) mgDelta = Math.max(mgDelta, 0.75);
+  }
 
-  // 30+ max +1
-  if(Career.age >= 30 && ratingDelta > 1) ratingDelta = 1;
-
-  // soft cap 85+: gain nerf
+  // 1. Soft caps (applied first so age cap doesn't cancel them out)
+  if(Career.rating >= 80 && ratingDelta > 0){
+    ratingDelta = Math.max(0, ratingDelta - 1);
+  }
   if(Career.rating >= 85 && ratingDelta > 0){
     ratingDelta = Math.max(0, ratingDelta - 1);
     if(Career.rating >= 88) ratingDelta = Math.max(0, ratingDelta - 1);
   }
 
-  // hard cap 90+: gain almost none unless legendary unlocked
+  // 2. Age cap (after soft caps so 30+ at 85+ can still gain 0 not go negative)
+  if(Career.age >= 30 && ratingDelta > 1) ratingDelta = 1;
+
+  // 3. Graduated 90+ wall: gets harder the higher you go, not a binary lock
   if(Career.rating >= 90 && ratingDelta > 0){
-    ratingDelta = (Career.memoryFlags.legendaryUnlocked ? 1 : 0);
+    const legendary = Career.memoryFlags.legendaryUnlocked;
+    let chance;
+    if(Career.rating >= 97)      chance = legendary ? 0.15 : 0;
+    else if(Career.rating >= 94) chance = legendary ? 0.35 : 0.07;
+    else if(Career.rating >= 92) chance = 0.25;
+    else                         chance = 0.55; // 90-91
+    ratingDelta = Math.random() < chance ? 1 : 0;
   }
+
+  // 4. Tek sezonda çöküşü engelle ama pasif yaşlanmaya yer bırak
+  if(Career.age >= 33 && ratingDelta < -3) ratingDelta = -3;
 
   // rep delta
   let repDelta = 0;
@@ -1928,9 +2912,7 @@ function simulateSeasonCore(dicePack, mgResult){
   if(personalGoalMet){
     let add = rnd(0,1);
     if(Career.age >= 30) add = 0;
-    ratingDelta = clamp(ratingDelta + add, -6, 7);
-    if(Career.age >= 30 && ratingDelta > 1) ratingDelta = 1;
-    if(Career.rating >= 90 && ratingDelta > 0) ratingDelta = (Career.memoryFlags.legendaryUnlocked ? 1 : 0);
+    ratingDelta = clamp(ratingDelta + add, -6, 5);
     valueDelta = clamp(Math.round((valueDelta + rnd(2,10)/10)*10)/10, -6.0, 10.0);
   }
 
@@ -1983,8 +2965,14 @@ function simulateSeasonCore(dicePack, mgResult){
     ratingDelta = Math.round(ratingDelta * 0.7);
   }
 
+  // Pasif yaşlanma: performanstan bağımsız, kaçınılmaz düşüş
+  let agePenalty = 0;
+  if(Career.age >= 39)      agePenalty = 3;
+  else if(Career.age >= 36) agePenalty = 2;
+  else if(Career.age >= 33) agePenalty = 1;
+
   // Apply base (mini-game delta applied as float, then rounded in total)
-  Career.rating = clamp(Math.round(Career.rating + ratingDelta + mgDelta), 40, 99);
+  Career.rating = clamp(Math.round(Career.rating + ratingDelta + mgDelta - agePenalty), 55, 99);
   Career.rep = clamp(Career.rep + repDelta, 0, 100);
   Career.valueM = clamp(Career.valueM + valueDelta, 0.4, 250);
   Career.peakValueM = Math.max(Career.peakValueM, Career.valueM);
@@ -1993,8 +2981,8 @@ function simulateSeasonCore(dicePack, mgResult){
   // D2 cap + 90+ rules
   applyRatingCaps();
   // v8: 28+ ST ise ve 25 gol altı sezon geçirdiyse -5 rating (tüm güncellemelerden sonra)
-  if(Career.pos === "ST" && Career.age >= 28 && goals < 25){
-    Career.rating = clamp(Career.rating - 5, 40, 99);
+  if(Career.pos === "ST" && Career.age >= 30 && goals < 20){
+    Career.rating = clamp(Career.rating - 2, 55, 99);
     applyRatingCaps();
   }
 
@@ -2132,7 +3120,12 @@ function simulateSeasonCore(dicePack, mgResult){
     division: seasonDivision,
     strength: Career.clubStrength,
     role: Career.role,
-    wonLeague: wonLeague
+    wonLeague,
+    wonIntl,
+    goals,
+    assists,
+    ratingAfter: Career.rating,
+    ratingDelta
   });
 
   // best season
@@ -2480,8 +3473,9 @@ function renderResults(){
   if(mgEl){
     if(r.mgResult && !r.mgResult.skipped){
       const ok = r.mgResult.success;
-      const delta = ok ? "+0.5" : "-1.5";
-      mgEl.innerHTML = `<span class="mg-result-badge ${ok?"good":"bad"}">${ok?"✅":"❌"} ${r.mgResult.label || r.mgResult.type}</span> Rating ${delta}`;
+      const dv = r.mgResult.ratingDelta || 0;
+      const deltaStr = (dv >= 0 ? "+" : "") + dv;
+      mgEl.innerHTML = `<span class="mg-result-badge ${ok?"good":"bad"}">${ok?"✅":"❌"} ${r.mgResult.label || r.mgResult.type}</span> Rating ${deltaStr}`;
     } else {
       mgEl.textContent = r.mgResult && r.mgResult.skipped ? "Atlandı" : "—";
     }
@@ -2535,22 +3529,44 @@ function renderSummary(){
   // Gecmis tab
   if(Career.bestSeason){
     const b = Career.bestSeason;
-    document.getElementById("sBestSeason").textContent =
-      `Sezon ${b.season} (Yaş ${b.age})\n`+
-      `${b.club} • ${leagueLabel(b.division)}\n`+
-      `Gol: ${b.goals}  Asist: ${b.assists}\n`+
-      `PerfScore: ${b.perfScore}\n`+
-      `Lig: ${b.finish}. sıra\n`+
-      `RatingDelta: ${b.ratingDelta>=0?"+":""}${b.ratingDelta}  RepDelta: ${b.repDelta>=0?"+":""}${b.repDelta}\n`+
-      `Hedef: ${b.clubGoalMet?"✅":"❌"}  Kişisel: ${b.personalGoalMet?"✅":"❌"}\n`+
-      `Tip: ${b.seasonFlavor}${b.breakout!=="NONE"?" • "+b.breakout:""}${b.criticalSeason?" • KRİTİK":""}`;
+    const rd = b.ratingDelta >= 0 ? `+${b.ratingDelta}` : `${b.ratingDelta}`;
+    document.getElementById("sBestSeason").innerHTML =
+      `<div class="bsc-header"><span>🏆 Sezon ${b.season}</span><span>Yaş ${b.age}</span></div>`+
+      `<div class="bsc-club">${b.club} <span class="bsc-league">${leagueLabel(b.division)}</span></div>`+
+      `<div class="bsc-row"><span>⚽ ${b.goals} Gol  &nbsp;🎯 ${b.assists} Asist</span><span>${b.finish}. Sıra</span></div>`+
+      `<div class="bsc-row"><span style="color:${b.ratingDelta>=0?'#6bff8e':'#ff6b6b'}">★ ${rd} Rating</span>`+
+      `<span>${b.clubGoalMet?"✅":"❌"} Kulüp &nbsp; ${b.personalGoalMet?"✅":"❌"} Kişisel</span></div>`+
+      `<div class="bsc-flavor">${b.seasonFlavor}${b.breakout!=="NONE"?" • "+b.breakout:""}${b.criticalSeason?" • KRİTİK":""}</div>`;
   } else {
-    document.getElementById("sBestSeason").textContent = "—";
+    document.getElementById("sBestSeason").innerHTML = "<em style='color:var(--muted)'>—</em>";
   }
 
-  const last = Career.clubHistory.slice(-10).reverse();
-  document.getElementById("sClubHistory").textContent =
-    last.length ? last.map(x=>`Sezon ${x.season} • ${x.club} • ${leagueLabel(x.division)} • Rol:${x.role}`).join("\n") : "—";
+  const hist = Career.clubHistory.slice().reverse();
+  const chEl = document.getElementById("sClubHistory");
+  if(!hist.length){ chEl.innerHTML = "<em style='color:var(--muted)'>—</em>"; }
+  else {
+    chEl.innerHTML = hist.map((x,i)=>{
+      const delay = Math.min(i * 0.07, 1.0);
+      const dr = (x.ratingDelta != null) ? (x.ratingDelta >= 0 ? `+${x.ratingDelta}` : `${x.ratingDelta}`) : "";
+      const drColor = (x.ratingDelta ?? 0) >= 0 ? "#6bff8e" : "#ff6b6b";
+      const trophies = [x.wonLeague?"🏆":"", x.wonIntl?"🌟":""].filter(Boolean).join(" ");
+      const goals = x.goals ?? "—";
+      const assists = x.assists ?? "—";
+      const ratingAfter = x.ratingAfter != null ? `★ ${x.ratingAfter}` : "";
+      return `<div class="chc anim-fiu" style="animation-delay:${delay}s">
+        <div class="chc-top">
+          <span class="chc-s">S${x.season}</span>
+          <span class="chc-age">Yaş ${x.age}</span>
+          <span class="chc-div">${leagueLabel(x.division)}</span>
+        </div>
+        <div class="chc-club">${x.club} ${trophies}</div>
+        <div class="chc-bot">
+          <span>⚽ ${goals} &nbsp;🎯 ${assists} &nbsp;<span class="chc-role">${x.role}</span></span>
+          <span>${ratingAfter ? `<span style="color:#ffd93d">${ratingAfter}</span>` : ""} ${dr ? `<span style="color:${drColor}">(${dr})</span>` : ""}</span>
+        </div>
+      </div>`;
+    }).join("");
+  }
 
   const mem = [];
   if(Career.memoryFlags.clubLegend)        mem.push("⭐ 5+ sezon aynı kulüp (Kulüp Efsanesi)");
@@ -2571,7 +3587,7 @@ document.getElementById("btnPlaySeason").onclick = ()=>{
   showLoader("Sezon simüle ediliyor…", "Ön hazırlık yapılıyor…");
   setTimeout(()=>{
     hideLoader();
-    runDiceEventsFlow(5, (dicePack)=>{
+    runDiceEventsFlow(3, (dicePack)=>{
       // Mini-game araya giriyor
       MiniGame.run((mgResult)=>{
         showLoader("Lig hesaplanıyor…", "Skorlar ve tablolar oluşuyor…");
@@ -2672,9 +3688,13 @@ document.addEventListener('click', e=>{
 ========================= */
 const MiniGame=(function(){
   const GAMES = [
-    { type:"penalty", title:"⚽ Penaltı", file:"mini_penalty.html" },
-    { type:"shot",    title:"🥅 Uzaktan Şut", file:"mini_longshot.html" },
-    { type:"pass",    title:"🎯 Pas", file:"mini_pass.html" }
+    { type:"penalty",   title:"⚽ Penaltı",       file:"mini_penalty.html" },
+    { type:"shot",      title:"🥅 Uzaktan Şut",   file:"mini_longshot.html" },
+    { type:"pass",      title:"🎯 Pas",            file:"mini_pass.html" },
+    { type:"duel",      title:"💪 Omuz Omuza",     file:"mini_omuzomuza.html" },
+    { type:"header",    title:"🤜 Kafa Golü",      file:"mini_head_goal.html" },
+    { type:"dribble",   title:"⚡ Çalım",          file:"mini_dribbling.html" },
+    { type:"one-v-one", title:"🎯 Bitiricililik",  file:"mini_finisher.html" }
   ];
 
   let doneCb = null;
@@ -2710,29 +3730,6 @@ const MiniGame=(function(){
       box-shadow:0 0 40px rgba(0,217,255,.25);
     `;
 
-    const skip = document.createElement("button");
-    skip.textContent = "ATLA";
-    skip.style.cssText = `
-      position:absolute;
-      right:12px;
-      top:84px;
-      z-index:10;
-      height:38px;
-      padding:0 14px;
-      border-radius:10px;
-      border:2px solid #2e8fca;
-      background:#0b1830;
-      color:#dff7ff;
-      font-weight:900;
-    `;
-    skip.onclick = () => finish({
-      skipped:true,
-      success:false,
-      ratingDelta:0,
-      type:"mini-game",
-      label:"Atlandı"
-    });
-
     iframe = document.createElement("iframe");
     iframe.style.cssText = `
       width:100%;
@@ -2744,7 +3741,6 @@ const MiniGame=(function(){
     iframe.setAttribute("allow", "fullscreen");
 
     frameWrap.appendChild(iframe);
-    frameWrap.appendChild(skip);
     overlay.appendChild(frameWrap);
     document.body.appendChild(overlay);
 
@@ -2804,60 +3800,41 @@ pillState.textContent="Menü";
 
 /* ── Settings Panel ─────────────────────────────────────── */
 (function(){
-  function initSettingsPanel(){
-    const btn=document.getElementById('settingsBtn');
-    const panel=document.getElementById('settingsPanel');
-    const bgmSlider=document.getElementById('bgmVolSlider');
-    const bgmVal=document.getElementById('bgmVolVal');
-    const sfxSlider=document.getElementById('sfxVolSlider');
-    const sfxVal=document.getElementById('sfxVolVal');
+  const btn=document.getElementById('settingsBtn');
+  const panel=document.getElementById('settingsPanel');
+  const bgmSlider=document.getElementById('bgmVolSlider');
+  const bgmVal=document.getElementById('bgmVolVal');
+  const sfxSlider=document.getElementById('sfxVolSlider');
+  const sfxVal=document.getElementById('sfxVolVal');
+  if(!btn||!panel)return;
 
-    if(!btn || !panel || !bgmSlider || !sfxSlider) {
-      console.warn("Settings panel elementleri bulunamadı");
-      return;
-    }
+  const savedBgm=parseInt(localStorage.getItem('bgmVol')||'18');
+  const savedSfx=parseInt(localStorage.getItem('sfxVol')||'50');
+  bgmSlider.value=savedBgm; bgmVal.textContent=savedBgm;
+  sfxSlider.value=savedSfx; sfxVal.textContent=savedSfx;
 
-    const savedBgm=parseInt(localStorage.getItem('bgmVol') || '18', 10);
-    const savedSfx=parseInt(localStorage.getItem('sfxVol') || '50', 10);
+  btn.addEventListener('click',function(e){
+    e.stopPropagation();
+    panel.hidden=!panel.hidden;
+  });
 
-    bgmSlider.value=savedBgm;
-    if(bgmVal) bgmVal.textContent=savedBgm;
+  document.addEventListener('click',function(e){
+    if(!panel.hidden&&!panel.contains(e.target)&&e.target!==btn)
+      panel.hidden=true;
+  });
 
-    sfxSlider.value=savedSfx;
-    if(sfxVal) sfxVal.textContent=savedSfx;
+  bgmSlider.addEventListener('input',function(){
+    const v=parseInt(this.value);
+    bgmVal.textContent=v;
+    localStorage.setItem('bgmVol',v);
+    if(window.setBgmVolume) window.setBgmVolume(v/100);
+    else if(window._bgmNode) window._bgmNode.gain.value=v/100;
+  });
 
-    if(window.setBgmVolume) window.setBgmVolume(savedBgm/100);
-    if(window.setSfxVolume) window.setSfxVolume(savedSfx/100);
-
-    btn.onclick=function(e){
-      e.stopPropagation();
-      panel.hidden=!panel.hidden;
-    };
-
-    document.addEventListener('click',function(e){
-      if(!panel.hidden && !panel.contains(e.target) && e.target!==btn){
-        panel.hidden=true;
-      }
-    });
-
-    bgmSlider.oninput=function(){
-      const v=parseInt(this.value,10);
-      if(bgmVal) bgmVal.textContent=v;
-      localStorage.setItem('bgmVol',v);
-      if(window.setBgmVolume) window.setBgmVolume(v/100);
-    };
-
-    sfxSlider.oninput=function(){
-      const v=parseInt(this.value,10);
-      if(sfxVal) sfxVal.textContent=v;
-      localStorage.setItem('sfxVol',v);
-      if(window.setSfxVolume) window.setSfxVolume(v/100);
-    };
-  }
-
-  if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", initSettingsPanel);
-  } else {
-    initSettingsPanel();
-  }
+  sfxSlider.addEventListener('input',function(){
+    const v=parseInt(this.value);
+    sfxVal.textContent=v;
+    localStorage.setItem('sfxVol',v);
+    if(window.setSfxVolume) window.setSfxVolume(v/100);
+  });
 })();

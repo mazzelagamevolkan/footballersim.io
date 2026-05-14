@@ -1,5 +1,4 @@
-
-html = r"""<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8" />
@@ -59,7 +58,7 @@ canvas{width:100%;height:100%;display:block;background:#0b3518}
 </div>
 
 <div class="objective">
-HEDEF<br>⭐ Pas Ver <span style="color:#4dfcff">(0/1)</span><br><br>
+HEDEF<br>⭐ Asist yap <span style="color:#4dfcff">(0/1)</span><br><br>
 </div>
 
 
@@ -114,13 +113,12 @@ function ease(t){return 1-Math.pow(1-t,3)}
 function resetPositions(force=true){
  if(!W) return;
 
- // Her tur farklı pozisyon üret.
- // force=false resize sırasında mevcut sahneyi korumak içindi, ama mobilde yeniden boyutlanınca da temiz kurulum güvenli.
- const scenario = Math.floor(Math.random()*5);
+ // Her tur farklı sahne üret.
+ const scenario = Math.floor(Math.random()*7);
 
- // Oyuncu başlangıç pozisyonu alt bölgede ama her seferinde hafif değişir.
- passer.x = W * rand(.30,.48);
- passer.y = H * rand(.66,.75);
+ // Oyuncu başlangıç pozisyonu alt bölgede ama her seferinde değişir.
+ passer.x = W * rand(.28,.50);
+ passer.y = H * rand(.66,.76);
 
  ball.x=passer.x+22; 
  ball.y=passer.y+18; 
@@ -128,63 +126,100 @@ function resetPositions(force=true){
  ball.drawY=ball.y;
 
  const clampX = v => Math.max(W*.12, Math.min(W*.88, v));
- const clampY = v => Math.max(H*.24, Math.min(H*.62, v));
+ const clampY = v => Math.max(H*.24, Math.min(H*.64, v));
 
- // Farklı pas senaryoları:
+ // Temel senaryo havuzu. Artık her sahnede aynı sayıda oyuncu/rakip yok.
  const scenarios = [
-   // Sağ iç koridor koşusu
    [
     {x:.35,y:.43,run:false},{x:.72,y:.49,run:false},{x:.62,y:.30,tx:.69,ty:.24,run:true},{x:.22,y:.54,run:false},{x:.50,y:.38,run:false}
    ],
-   // Sol kanat koşusu
    [
     {x:.28,y:.42,run:false},{x:.66,y:.52,run:false},{x:.30,y:.34,tx:.20,ty:.27,run:true},{x:.76,y:.43,run:false},{x:.52,y:.47,run:false}
    ],
-   // Merkez ara pas
    [
     {x:.40,y:.45,run:false},{x:.58,y:.40,run:false},{x:.50,y:.32,tx:.51,ty:.24,run:true},{x:.75,y:.55,run:false},{x:.25,y:.55,run:false}
    ],
-   // Sağ kanat geniş oyun
    [
     {x:.34,y:.50,run:false},{x:.78,y:.39,run:false},{x:.80,y:.31,tx:.86,ty:.25,run:true},{x:.20,y:.45,run:false},{x:.56,y:.54,run:false}
    ],
-   // Sol içten çapraz koşu
    [
     {x:.31,y:.49,run:false},{x:.68,y:.43,run:false},{x:.42,y:.34,tx:.35,ty:.25,run:true},{x:.78,y:.55,run:false},{x:.54,y:.38,run:false}
+   ],
+   // Koşusuz kısa pas / tiki-taka sahnesi
+   [
+    {x:.30,y:.50,run:false},{x:.47,y:.42,run:false},{x:.67,y:.46,run:false},{x:.76,y:.57,run:false}
+   ],
+   // Koşusuz kalabalık merkez sahnesi
+   [
+    {x:.25,y:.44,run:false},{x:.42,y:.36,run:false},{x:.58,y:.42,run:false},{x:.72,y:.50,run:false},{x:.36,y:.57,run:false},{x:.63,y:.60,run:false}
    ]
  ];
 
- teammates = scenarios[scenario].map((p,i)=>({
-   x: clampX(W*(p.x + rand(-.035,.035))),
-   y: clampY(H*(p.y + rand(-.025,.025))),
-   tx: clampX(W*((p.tx ?? p.x) + rand(-.025,.025))),
-   ty: clampY(H*((p.ty ?? p.y) + rand(-.020,.020))),
-   run: p.run,
-   receive: p.run ? 36 : 31,
-   id:i,
-   dir: Math.random()<.5 ? 1 : -1
- }));
+ const base = scenarios[scenario];
 
- // Savunmacılar pas koridorlarına göre random dizilir.
+ // Bu tur koşu var mı? Yaklaşık %55 koşulu, %45 koşusuz.
+ const allowRun = Math.random() < .55;
+ let runUsed = false;
+
+ // Pas verilecek oyuncu sayısı 3-6 arasında random.
+ const teammateCount = Math.min(base.length, 2 + Math.floor(Math.random()*3));
+
+ // Base oyuncuları karıştır ve kes.
+ const shuffled = [...base].sort(()=>Math.random()-.5).slice(0, teammateCount);
+
+ teammates = shuffled.map((p,i)=>{
+   const shouldRun = allowRun && !runUsed && p.run && Math.random() < .80;
+   if(shouldRun) runUsed = true;
+
+   // Eğer base'te koşu yoksa ama allowRun true ise, nadiren bir oyuncuyu koşuya çıkar.
+   const forceRun = allowRun && !runUsed && i===shuffled.length-1 && Math.random() < .45;
+   const finalRun = shouldRun || forceRun;
+
+   const px = p.x + rand(-.045,.045);
+   const py = p.y + rand(-.035,.035);
+
+   let tx = p.tx ?? p.x;
+   let ty = p.ty ?? p.y;
+
+   if(forceRun){
+     tx = px + rand(-.08,.08);
+     ty = py - rand(.07,.13);
+     runUsed = true;
+   }
+
+   return {
+     x: clampX(W*px),
+     y: clampY(H*py),
+     tx: clampX(W*(tx + rand(-.030,.030))),
+     ty: clampY(H*(ty + rand(-.025,.025))),
+     run: finalRun,
+     receive: finalRun ? 36 : 31,
+     id:i,
+     dir: Math.random()<.5 ? 1 : -1
+   };
+ });
+
+ // Savunmacı sayısı 2-6 arasında random.
  defenders = [];
- const defenderCount = 4 + Math.floor(Math.random()*2);
+ const defenderCount = 3 + Math.floor(Math.random()*4);
 
  for(let i=0;i<defenderCount;i++){
-   const laneT = rand(.25,.82);
+   const laneT = rand(.22,.86);
    const baseTarget = teammates[Math.floor(Math.random()*teammates.length)];
    const lx = lerp(passer.x, baseTarget.x, laneT);
    const ly = lerp(passer.y, baseTarget.y, laneT);
    defenders.push({
-     x: clampX(lx + rand(-55,55)),
-     y: clampY(ly + rand(-45,45)),
-     range: rand(24,32),
-     smart: rand(.48,.72),
+     x: clampX(lx + rand(-70,70)),
+     y: clampY(ly + rand(-55,55)),
+     range: rand(22,33),
+     smart: rand(.42,.76),
      dir: Math.random()<.5 ? 1 : -1
    });
  }
 
- // Her tur koşu yapan oyuncu otomatik hedef olsun.
- selected = teammates.find(t=>t.run) || teammates[Math.floor(Math.random()*teammates.length)];
+ // Koşu varsa bazen onu hedef yap, yoksa random takım arkadaşı hedef olsun.
+ const runner = teammates.find(t=>t.run);
+ selected = (runner && Math.random() < .65) ? runner : teammates[Math.floor(Math.random()*teammates.length)];
 }
 resize();
 
@@ -314,7 +349,17 @@ function buildMiniGameResult(r){
   };
 }
 function sendMiniGameResult(){
-  window.parent.postMessage(lastMiniResult || buildMiniGameResult("bad"), "*");
+  const payload = lastMiniResult || buildMiniGameResult("bad");
+
+  // Career simulator içine gömülü çalışıyorsa parent'a gönder.
+  if(window.parent && window.parent !== window){
+    window.parent.postMessage(payload, "*");
+  }
+
+  // Standalone çalışıyorsa yeni round başlat.
+  setTimeout(()=>{
+    resetRound();
+  }, 80);
 }
 
 function finish(r){
@@ -402,9 +447,10 @@ function draw(){
  drawField();drawGoalKeeperAtGoal();
  defenders.forEach((d,i)=>drawPlayer(d.x,d.y,"enemy","",.78,d.dir));
  teammates.forEach(t=>{drawRing(t.x,t.y,selected===t?"#fff12d":"#28d7ff");drawPlayer(t.x,t.y,"main","",.78,t.dir)});
- if(teammates[2]){
-   ctx.fillStyle="#ffdf28";ctx.font="bold 17px Arial";ctx.textAlign="center";ctx.shadowColor="#ffdf28";ctx.shadowBlur=12;ctx.fillText("KOŞU YAPIYOR!",teammates[2].x,teammates[2].y-52);ctx.shadowBlur=0;
-   ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(teammates[2].x,teammates[2].y-38);ctx.lineTo(teammates[2].x-8,teammates[2].y-50);ctx.lineTo(teammates[2].x+8,teammates[2].y-50);ctx.fill();
+ const runner = teammates.find(t=>t.run);
+ if(runner){
+   ctx.fillStyle="#ffdf28";ctx.font="bold 17px Arial";ctx.textAlign="center";ctx.shadowColor="#ffdf28";ctx.shadowBlur=12;ctx.fillText("KOŞU YAPIYOR!",runner.x,runner.y-52);ctx.shadowBlur=0;
+   ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(runner.x,runner.y-38);ctx.lineTo(runner.x-8,runner.y-50);ctx.lineTo(runner.x+8,runner.y-50);ctx.fill();
  }
  drawPassingCone();drawArrowLine();
  drawPlayer(passer.x,passer.y,"main","10",.9);

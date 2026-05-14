@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Kafa Vuruşu Mini Oyunu</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+body{margin:0;background:#030712;color:#fff;font-family:Arial,Helvetica,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:hidden}
+#wrap{width:min(100vw,520px);height:100vh;max-height:920px;position:relative;background:#07101f;overflow:hidden;border-left:1px solid #1e4968;border-right:1px solid #1e4968}
+canvas{width:100%;height:100%;display:block;background:#0b3518}
+.topbar{position:absolute;top:0;left:0;right:0;height:74px;background:#060b16ee;z-index:10;border-bottom:1px solid #18314c}
+.score{position:absolute;left:12px;top:10px;height:54px;width:210px;border:2px solid #1e7fb3;border-radius:12px;background:#111a2bcc;display:flex;align-items:center;justify-content:center;box-shadow:0 0 18px #00bfff28}
+.scoreNum{font-size:24px;font-weight:1000;letter-spacing:1px}
+.timerBox{position:absolute;left:50%;top:12px;transform:translateX(-50%);height:58px;min-width:135px;border:2px solid #1e7fb3;border-radius:12px;background:#050913ee;text-align:center;padding-top:5px;box-shadow:0 0 20px #000}
+.timerBox b{display:block;color:#dcecff;font-size:14px}.timerBox span{display:block;color:#ffdf30;font-size:25px;font-weight:1000}
+.coins{position:absolute;right:12px;top:12px;height:44px;min-width:102px;border:2px solid #1e7fb3;border-radius:10px;background:#0e1728;display:flex;align-items:center;justify-content:center;font-weight:1000}
+.banner{position:absolute;left:50%;top:84px;transform:translateX(-50%);background:#050913e8;border:2px solid #1e7fb3;border-radius:12px;text-align:center;padding:9px 22px;z-index:9;box-shadow:0 0 20px #000}
+.banner b{color:#ffcc27;font-size:20px}.banner span{font-weight:900;font-size:13px;color:#cfe7ff}
+.objective{position:absolute;top:84px;left:14px;background:#06111ddd;border:2px solid #1f8fc0;border-radius:10px;padding:10px 12px;z-index:7;font-weight:900;font-size:13px;color:#dff7ff;box-shadow:0 0 16px #00c8ff30;width:142px}
+.playerPanel{position:absolute;top:84px;right:14px;width:150px;background:#06111ddd;border:2px solid #1f8fc0;border-radius:10px;padding:10px 12px;z-index:7;box-shadow:0 0 16px #00c8ff30}
+.playerPanel b{color:#ff4ecb}.stat{font-size:12px;color:#69efff;font-weight:900;margin-top:8px}.bar{height:5px;background:#172234;border-radius:8px;margin-top:3px;overflow:hidden}.bar span{display:block;height:100%;background:#42ff8e}
+.timingWrap{position:absolute;left:50%;bottom:160px;transform:translateX(-50%);width:84%;height:52px;background:#101722;border:3px solid #526070;border-radius:18px;padding:7px;z-index:8;box-shadow:0 0 18px #00d9ff44}
+.timingLabel{position:absolute;left:50%;top:-31px;transform:translateX(-50%);background:#101722;color:white;font-weight:1000;padding:4px 22px;border-radius:8px;border:2px solid #2d4050}
+.timingTrack{position:relative;height:100%;border-radius:12px;background:linear-gradient(90deg,#ff3d3d 0%,#ffb42e 30%,#42d73b 45%,#42d73b 55%,#ffb42e 70%,#ff3d3d 100%);overflow:hidden}
+.greenZone{position:absolute;left:44%;top:0;width:12%;height:100%;background:rgba(255,255,255,.35);box-shadow:0 0 18px #fff}
+.timingMarker{position:absolute;top:2px;left:0%;width:16px;height:30px;transform:translateX(-50%);background:#07101f;border:3px solid #fff;border-radius:8px;z-index:4;box-shadow:0 0 14px #fff}
+.tapBtn{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);height:82px;width:235px;border-radius:24px;border:4px solid #4beeff;background:linear-gradient(#155a75,#071522);color:#bffaff;font-size:30px;font-weight:1000;z-index:8;box-shadow:0 0 32px #00e5ffcc;text-shadow:0 3px #05202d}
+.targetPanel{position:absolute;left:50%;bottom:222px;transform:translateX(-50%);z-index:8;text-align:center;font-weight:1000;font-size:14px;color:#ffea39;text-shadow:0 3px 4px #000}
+.resultOverlay{position:absolute;inset:0;background:linear-gradient(#00000022,#000000c0);z-index:20;display:none;align-items:flex-end;justify-content:center;padding:0 18px 80px}
+.resultCard{width:100%;background:#07111ddd;border:2px solid #1e8fc5;border-radius:16px;padding:18px;text-align:center;box-shadow:0 0 24px #00d9ff55}
+.bigText{font-size:42px;font-weight:1000;text-shadow:0 5px #000,0 0 20px #fff;margin-bottom:6px}
+.subText{font-size:17px;font-weight:1000;color:#56eaff}.reward{margin:14px auto 16px;background:#071c18;border-radius:10px;padding:12px;font-size:18px;font-weight:900;width:82%}
+.continue{height:54px;width:190px;border-radius:10px;border:2px solid #38dfff;background:#0b2437;color:#7ef4ff;font-size:21px;font-weight:1000}
+.comboText{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);font-size:38px;font-weight:1000;color:#ffdf30;text-shadow:0 5px #000,0 0 22px #ffdf30;opacity:0;z-index:9;pointer-events:none}
+.comboText.show{animation:pop .55s ease}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}40%{opacity:1;transform:translate(-50%,-50%) scale(1.18)}100%{opacity:0;transform:translate(-50%,-72%) scale(1)}}
+@media(max-width:430px){
+.banner{display:none}.objective{width:126px;font-size:12px}.playerPanel{width:132px}.score{width:174px}.timerBox{min-width:112px}.coins{display:none}.tapBtn{width:210px}.targetPanel{font-size:13px}.timingWrap{width:90%}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="game"></canvas>
+
+<div class="topbar">
+  <div class="score"><span class="scoreNum">KAFA GOLÜ</span></div>
+  <div class="timerBox"><b>ORTA GELİYOR</b><span id="timeText">HAZIR</span></div>
+  <div class="coins">⭐ +15</div>
+</div>
+
+<div class="banner"><b>ORTA GELDİ!</b><br><span>Doğru zamanda kafa vur</span></div>
+
+<div class="targetPanel" id="targetPanel">Kalede hedef seçmek için dokun — sonra KAFA VUR!</div>
+
+<div class="timingWrap">
+  <div class="timingLabel">ZAMANLAMA</div>
+  <div class="timingTrack">
+    <div class="greenZone"></div>
+    <div class="timingMarker" id="timingMarker"></div>
+  </div>
+</div>
+
+<button class="tapBtn" id="tapBtn">KAFA VUR!</button>
+<div class="comboText" id="comboText">MÜKEMMEL!</div>
+
+<div class="resultOverlay" id="resultOverlay">
+  <div class="resultCard">
+    <div class="bigText" id="resultText">GOOOL!</div>
+    <div class="subText" id="resultSub">KAFA GOLÜ!</div>
+    <div class="reward" id="reward">+25 ⭐</div>
+    <button class="continue" onclick="sendMiniGameResult()">DEVAM ET</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d"),wrap=document.getElementById("wrap");
+let W,H,DPR;
+function resize(){DPR=Math.min(devicePixelRatio||1,2);W=wrap.clientWidth;H=wrap.clientHeight;canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);layout()}
+addEventListener("resize",resize);
+
+const timingMarker=document.getElementById("timingMarker"),tapBtn=document.getElementById("tapBtn"),timeText=document.getElementById("timeText");
+const resultOverlay=document.getElementById("resultOverlay"),resultText=document.getElementById("resultText"),resultSub=document.getElementById("resultSub"),reward=document.getElementById("reward");
+const comboText=document.getElementById("comboText"),targetPanel=document.getElementById("targetPanel");
+
+let lastMiniResult=null;
+let state="aim"; // aim, cross, headed, result
+let marker=0, markerDir=1;
+let crossT=0;
+let shotT=0;
+let shake=0, flash=0;
+let target={x:0,y:0};
+let player={x:0,y:0,jump:0,head:false};
+let keeper={x:0,y:0,targetX:0,targetY:0,dive:false,prog:0};
+let goal={x:0,y:0,w:0,h:0,net:0};
+let ball={x:0,y:0,startX:0,startY:0,crossX:0,crossY:0,targetX:0,targetY:0,drawX:0,drawY:0,r:8,trail:[],rot:0};
+let shotResult="out";
+
+function rand(a,b){return a+Math.random()*(b-a)}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function lerp(a,b,t){return a+(b-a)*t}
+function ease(t){return 1-Math.pow(1-t,3)}
+
+function layout(){
+ goal.w=W*.70; goal.h=H*.16; goal.x=(W-goal.w)/2; goal.y=H*.20;
+ player.x=W*.52; player.y=H*.62;
+ keeper.x=W*.50; keeper.y=goal.y+goal.h*.63;
+ if(state==="aim"){
+   ball.startX=W*.08; ball.startY=H*.43;
+   ball.crossX=player.x-8; ball.crossY=player.y-78;
+   ball.x=ball.startX; ball.y=ball.startY; ball.drawX=ball.x; ball.drawY=ball.y;
+ }
+ if(!target.x){target.x=goal.x+goal.w*.78;target.y=goal.y+goal.h*.30;}
+}
+resize();
+
+function resetRound(){
+ state="aim";
+ resultOverlay.style.display="none";
+ marker=rand(.05,.25); markerDir=1;
+ crossT=0; shotT=0; shake=0; flash=0;
+ player.jump=0; player.head=false;
+ keeper.dive=false; keeper.prog=0;
+ goal.net=0; ball.trail=[]; shotResult="out";
+ target={x:goal.x+rand(goal.w*.18,goal.w*.82),y:goal.y+rand(goal.h*.18,goal.h*.76)};
+ layout();
+ targetPanel.textContent="Kalede hedef seçmek için dokun — sonra KAFA VUR!";
+ timeText.textContent="HAZIR";
+}
+
+function pointer(e){const r=canvas.getBoundingClientRect();const p=e.touches?e.touches[0]:e;return{x:p.clientX-r.left,y:p.clientY-r.top}}
+canvas.addEventListener("pointerdown",e=>selectTarget(pointer(e)));
+canvas.addEventListener("touchstart",e=>{selectTarget(pointer(e));e.preventDefault()},{passive:false});
+
+function selectTarget(p){
+ if(state!=="aim")return;
+ target.x=clamp(p.x,goal.x+14,goal.x+goal.w-14);
+ target.y=clamp(p.y,goal.y+14,goal.y+goal.h-14);
+ targetPanel.textContent="Hedef seçildi — doğru zamanda KAFA VUR!";
+}
+
+tapBtn.addEventListener("pointerdown",headerTap);
+tapBtn.addEventListener("touchstart",e=>{headerTap();e.preventDefault()},{passive:false});
+
+function startCross(){
+ state="cross";
+ crossT=0;
+ ball.trail=[];
+ ball.startX=W*.08;
+ ball.startY=H*.43;
+ ball.crossX=player.x-8;
+ ball.crossY=player.y-78;
+ targetPanel.textContent="Top geliyor! Yeşil bölgede vur!";
+}
+
+function headerTap(){
+ if(state==="aim"){
+   startCross();
+   return;
+ }
+ if(state!=="cross")return;
+
+ const timingScore=1-Math.min(1,Math.abs(marker-.50)/.50);
+ const inGreen=marker>=.44 && marker<=.56;
+ player.head=true;
+ player.jump=1;
+ shake=5;
+ showPop(inGreen?"MÜKEMMEL!":timingScore>.55?"İYİ!":"KÖTÜ!");
+
+ chooseWeightedResult();
+ startHeaderShot(timingScore,inGreen);
+}
+
+function chooseWeightedResult(){
+ const r=Math.random()*100;
+ if(r<42) shotResult="goal";
+ else if(r<54) shotResult="post";
+ else if(r<82) shotResult="out";
+ else shotResult="save";
+}
+
+function startHeaderShot(timingScore,inGreen){
+ state="headed";
+ shotT=0;
+
+ let tx=target.x;
+ let ty=target.y;
+
+ // Tıklanan hedef yönü baz alınır ama sonuç oranı belirleyici olur.
+ if(shotResult==="goal"){
+   tx=clamp(target.x+rand(-18,18)*(inGreen?.4:1),goal.x+18,goal.x+goal.w-18);
+   ty=clamp(target.y+rand(-16,16)*(inGreen?.4:1),goal.y+18,goal.y+goal.h-18);
+ }
+ if(shotResult==="post"){
+   const side=Math.random()<.5?goal.x:goal.x+goal.w;
+   tx=side+rand(-7,7);
+   ty=clamp(target.y+rand(-24,24),goal.y+8,goal.y+goal.h-4);
+ }
+ if(shotResult==="out"){
+   tx=target.x + (target.x<W/2 ? -rand(45,95) : rand(45,95));
+   ty=target.y + rand(-60,75);
+   if(Math.random()<.45)ty=goal.y-rand(20,70);
+ }
+ if(shotResult==="save"){
+   tx=clamp(target.x+rand(-28,28),goal.x+25,goal.x+goal.w-25);
+   ty=clamp(target.y+rand(-24,24),goal.y+22,goal.y+goal.h-22);
+   keeper.targetX=tx;
+   keeper.targetY=ty;
+   keeper.dive=true;
+   keeper.prog=0;
+ }
+
+ ball.startX=ball.crossX;
+ ball.startY=ball.crossY;
+ ball.targetX=tx;
+ ball.targetY=ty;
+ ball.trail=[];
+ flash=.25;
+}
+
+function showPop(txt){
+ comboText.textContent=txt;
+ comboText.classList.remove("show");
+ void comboText.offsetWidth;
+ comboText.classList.add("show");
+}
+
+function buildMiniGameResult(r){
+ const ok=r==="goal";
+ const labels={goal:"Header Goal",post:"Post",out:"Out",save:"Saved"};
+ return {
+   source:"career-mini-game",
+   type:"header",
+   result:r,
+   success:ok,
+   label:labels[r] || "Header",
+   ratingDelta: ok ? 0.5 : -1.5
+ };
+}
+
+function sendMiniGameResult(){
+ const payload=lastMiniResult || buildMiniGameResult("out");
+ if(window.parent && window.parent!==window){
+   window.parent.postMessage(payload,"*");
+ }
+ setTimeout(()=>resetRound(),80);
+}
+
+function finish(r){
+ lastMiniResult=buildMiniGameResult(r);
+ state="result";
+ if(r==="goal"){
+   resultText.textContent="GOOOOL!";
+   resultText.style.color="#ffd936";
+   resultSub.textContent="KAFA GOLÜ!";
+   reward.textContent="+25 ⭐  +150 🪙";
+   goal.net=22; shake=12; flash=.55;
+ }else if(r==="post"){
+   resultText.textContent="DİREK!";
+   resultText.style.color="#ffb42c";
+   resultSub.textContent="KAFA DİREKTEN DÖNDÜ!";
+   reward.textContent="TECHNIQUE +1";
+   shake=10;
+ }else if(r==="save"){
+   resultText.textContent="KURTARDI!";
+   resultText.style.color="#ff4f7d";
+   resultSub.textContent="KALECİ ÇIKARDI!";
+   reward.textContent="MORAL -5";
+   shake=8;
+ }else{
+   resultText.textContent="AUT!";
+   resultText.style.color="#ddd";
+   resultSub.textContent="KAFA DIŞARI GİTTİ!";
+   reward.textContent="MORAL -3";
+   shake=5;
+ }
+ setTimeout(()=>resultOverlay.style.display="flex",350);
+}
+
+function update(dt){
+ if(state==="aim"||state==="cross"){
+   marker+=markerDir*dt*1.65;
+   if(marker>=1){marker=1;markerDir=-1}
+   if(marker<=0){marker=0;markerDir=1}
+ }
+
+ if(state==="cross"){
+   crossT=Math.min(1,crossT+dt*.68);
+   const e=ease(crossT);
+   const arc=Math.sin(Math.PI*crossT)*120;
+   ball.x=lerp(ball.startX,ball.crossX,e);
+   ball.y=lerp(ball.startY,ball.crossY,e)-arc;
+   ball.drawX=ball.x; ball.drawY=ball.y;
+   ball.rot+=dt*5;
+   ball.trail.push({x:ball.drawX,y:ball.drawY}); if(ball.trail.length>18)ball.trail.shift();
+   timeText.textContent=(1.5-crossT*1.5).toFixed(1);
+   if(crossT>=1) finish("out");
+ }
+
+ if(state==="headed"){
+   shotT=Math.min(1,shotT+dt*1.65);
+   const e=ease(shotT);
+   const arc=Math.sin(Math.PI*shotT)*55;
+   ball.x=lerp(ball.startX,ball.targetX,e);
+   ball.y=lerp(ball.startY,ball.targetY,e)-arc;
+   ball.drawX=ball.x; ball.drawY=ball.y;
+   ball.rot+=dt*9;
+   ball.trail.push({x:ball.drawX,y:ball.drawY}); if(ball.trail.length>20)ball.trail.shift();
+
+   if(keeper.dive){
+     keeper.prog=Math.min(1,keeper.prog+dt*2.8);
+     keeper.x=lerp(W*.50,keeper.targetX,keeper.prog);
+     keeper.y=lerp(goal.y+goal.h*.63,keeper.targetY,keeper.prog);
+   }
+
+   if(shotT>=1)finish(shotResult);
+ }
+
+ if(player.jump>0)player.jump=Math.max(0,player.jump-dt*1.8);
+ timingMarker.style.left=(marker*100)+"%";
+ shake*=.88;goal.net*=.86;flash*=.86;
+}
+
+function drawField(){
+ const g=ctx.createLinearGradient(0,70,0,H);g.addColorStop(0,"#164d26");g.addColorStop(1,"#083616");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ for(let i=0;i<11;i++){ctx.fillStyle=i%2?"rgba(255,255,255,.035)":"rgba(0,0,0,.055)";ctx.fillRect(0,74+i*76,W,76)}
+ ctx.fillStyle="#090922";ctx.fillRect(0,74,W,145);
+ for(let i=0;i<115;i++){let colors=["#ff4ee2","#2df06c","#4d7cff","#ffe95b","#ff9143","#9b56ff","#40e4de"];ctx.fillStyle=colors[i%colors.length];ctx.beginPath();ctx.arc((i*23)%W,96+(i*29)%84,2.2,0,7);ctx.fill()}
+ ctx.strokeStyle="rgba(255,255,255,.50)";ctx.lineWidth=2;
+ ctx.strokeRect(20,170,W-40,H-230);
+ ctx.strokeRect(W*.18,goal.y+goal.h+10,W*.64,155);
+ ctx.strokeRect(W*.34,goal.y+goal.h+10,W*.32,62);
+}
+
+function drawGoal(){
+ ctx.save();ctx.translate(rand(-goal.net,goal.net),rand(-goal.net,goal.net));
+ ctx.fillStyle="#083b1b";ctx.fillRect(goal.x,goal.y,goal.w,goal.h);
+ ctx.strokeStyle="rgba(255,255,255,.16)";ctx.lineWidth=2;
+ for(let x=goal.x+18;x<goal.x+goal.w;x+=18){ctx.beginPath();ctx.moveTo(x,goal.y);ctx.lineTo(x,goal.y+goal.h);ctx.stroke()}
+ for(let y=goal.y+18;y<goal.y+goal.h;y+=18){ctx.beginPath();ctx.moveTo(goal.x,y);ctx.lineTo(goal.x+goal.w,y);ctx.stroke()}
+ ctx.strokeStyle="#f4f7f8";ctx.lineWidth=10;ctx.strokeRect(goal.x,goal.y,goal.w,goal.h);
+ ctx.strokeStyle="#bfcbd1";ctx.lineWidth=4;ctx.strokeRect(goal.x+6,goal.y+6,goal.w-12,goal.h-12);ctx.restore();
+}
+
+function drawTargets(){
+ [[.10,.20,"#ff4965"],[.90,.20,"#ffa726"],[.10,.70,"#249dff"],[.90,.70,"#249dff"]].forEach((p,i)=>{
+  let x=goal.x+goal.w*p[0],y=goal.y+goal.h*p[1],s=1+Math.sin(performance.now()/220+i)*.12;
+  ctx.shadowBlur=20;ctx.shadowColor=p[2];ctx.fillStyle=p[2];ctx.beginPath();ctx.arc(x,y,11*s,0,7);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle="white";ctx.lineWidth=2;ctx.stroke()
+ });
+ ctx.strokeStyle="#ffea39";ctx.lineWidth=3;ctx.shadowColor="#ffea39";ctx.shadowBlur=18;
+ ctx.beginPath();ctx.arc(target.x,target.y,15,0,7);ctx.stroke();ctx.shadowBlur=0;
+}
+
+function drawPlayer(x,y,kit,num,scale=1,dir=1,jump=0){
+ ctx.save();ctx.translate(x,y-jump*46);ctx.scale(scale*dir,scale);
+ ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(0,38+jump*46,26,7,0,0,7);ctx.fill();
+ if(kit==="main"){
+   ctx.fillStyle="#66c7ee";ctx.fillRect(-14,-58,28,16);
+   ctx.fillStyle="#ffd09b";ctx.fillRect(-18,-42,36,28);
+   ctx.fillStyle="#d25522";ctx.fillRect(-21,-14,42,46);
+   ctx.fillStyle="#8d1a1f";ctx.fillRect(-5,-14,10,46);
+ }else if(kit==="keeper"){
+   ctx.fillStyle="#0c8a42";ctx.fillRect(-14,-58,28,16);
+   ctx.fillStyle="#ffd09b";ctx.fillRect(-18,-42,36,28);
+   ctx.fillStyle="#0b7e3c";ctx.fillRect(-21,-14,42,46);
+ }else{
+   ctx.fillStyle="#1d2338";ctx.fillRect(-14,-58,28,16);
+   ctx.fillStyle="#ffd09b";ctx.fillRect(-18,-42,36,28);
+   ctx.fillStyle="#182137";ctx.fillRect(-21,-14,42,46);
+   ctx.fillStyle="#c82b3b";ctx.fillRect(-5,-14,10,46);
+ }
+ ctx.fillStyle="#ffd09b";ctx.fillRect(-33,-6,12,33);ctx.fillRect(21,-6,12,33);
+ ctx.fillStyle=kit==="enemy"?"#eee":"#d25522";ctx.fillRect(-17,32,13,34);ctx.fillRect(4,32,13,34);
+ ctx.fillStyle="#101820";ctx.fillRect(-19,64,16,7);ctx.fillRect(3,64,16,7);
+ ctx.fillStyle="#fff";ctx.font="bold 15px Arial";ctx.textAlign="center";if(num)ctx.fillText(num,0,18);
+ ctx.restore();
+}
+
+function drawBall(){
+ ball.trail.forEach((p,i)=>{ctx.globalAlpha=i/ball.trail.length*.42;ctx.fillStyle="white";ctx.beginPath();ctx.arc(p.x,p.y,8*i/ball.trail.length,0,7);ctx.fill()});ctx.globalAlpha=1;
+ ctx.fillStyle="rgba(0,0,0,.28)";ctx.beginPath();ctx.ellipse(ball.drawX,ball.y+12,14,4,0,0,7);ctx.fill();
+ ctx.save();ctx.translate(ball.drawX,ball.drawY);ctx.rotate(ball.rot);
+ ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,0,8,0,7);ctx.fill();
+ ctx.fillStyle="#111";ctx.beginPath();ctx.arc(0,0,3,0,7);ctx.fill();
+ ctx.restore();
+}
+
+function draw(){
+ ctx.clearRect(0,0,W,H);ctx.save();ctx.translate(rand(-shake,shake),rand(-shake,shake));
+ drawField();drawGoal();drawTargets();
+ drawPlayer(keeper.x,keeper.y,"keeper","",.9,1,0);
+ drawPlayer(W*.41,H*.62,"enemy","4",.82,1,0);
+ drawPlayer(player.x,player.y,"main","10",.92,1,player.jump);
+ drawBall();
+ ctx.fillStyle="#ffdf30";ctx.font="bold 24px Arial";ctx.textAlign="center";ctx.shadowColor="#000";ctx.shadowBlur=8;
+ if(state==="aim")ctx.fillText("Hedef seç ve orta gelsin!",W/2,H*.48);
+ else if(state==="cross")ctx.fillText("ZAMANLA!",W/2,H*.48);
+ ctx.shadowBlur=0;
+ ctx.restore();
+ if(flash>0){ctx.fillStyle=`rgba(255,255,255,${flash*.25})`;ctx.fillRect(0,0,W,H)}
+}
+
+let last=performance.now();
+function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Çalım Mini Oyunu</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+body{margin:0;background:#030712;color:#fff;font-family:Arial,Helvetica,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:hidden}
+#wrap{width:min(100vw,520px);height:100vh;max-height:920px;position:relative;background:#07101f;overflow:hidden;border-left:1px solid #1e4968;border-right:1px solid #1e4968}
+canvas{width:100%;height:100%;display:block;background:#0b3518}
+.topbar{position:absolute;top:0;left:0;right:0;height:74px;background:#060b16ee;z-index:10;border-bottom:1px solid #18314c}
+.score{position:absolute;left:12px;top:10px;height:54px;width:210px;border:2px solid #1e7fb3;border-radius:12px;background:#111a2bcc;display:flex;align-items:center;justify-content:center;box-shadow:0 0 18px #00bfff28}
+.scoreNum{font-size:24px;font-weight:1000;letter-spacing:1px}
+.timerBox{position:absolute;left:50%;top:12px;transform:translateX(-50%);height:58px;min-width:135px;border:2px solid #1e7fb3;border-radius:12px;background:#050913ee;text-align:center;padding-top:5px;box-shadow:0 0 20px #000}
+.timerBox b{display:block;color:#dcecff;font-size:14px}.timerBox span{display:block;color:#ffdf30;font-size:26px;font-weight:1000}
+.coins{position:absolute;right:12px;top:12px;height:44px;min-width:102px;border:2px solid #1e7fb3;border-radius:10px;background:#0e1728;display:flex;align-items:center;justify-content:center;font-weight:1000}
+.banner{position:absolute;left:50%;top:84px;transform:translateX(-50%);background:#050913e8;border:2px solid #1e7fb3;border-radius:12px;text-align:center;padding:9px 22px;z-index:9;box-shadow:0 0 20px #000}
+.banner b{color:#ffcc27;font-size:20px}.banner span{font-weight:900;font-size:13px;color:#cfe7ff}
+.objective{position:absolute;top:84px;left:14px;background:#06111ddd;border:2px solid #1f8fc0;border-radius:10px;padding:10px 12px;z-index:7;font-weight:900;font-size:13px;color:#dff7ff;box-shadow:0 0 16px #00c8ff30;width:142px}
+.playerPanel{position:absolute;top:84px;right:14px;width:150px;background:#06111ddd;border:2px solid #1f8fc0;border-radius:10px;padding:10px 12px;z-index:7;box-shadow:0 0 16px #00c8ff30}
+.playerPanel b{color:#ff4ecb}.stat{font-size:12px;color:#69efff;font-weight:900;margin-top:8px}.bar{height:5px;background:#172234;border-radius:8px;margin-top:3px;overflow:hidden}.bar span{display:block;height:100%;background:#42ff8e}
+.movePanel{position:absolute;left:50%;bottom:168px;transform:translateX(-50%);width:86%;height:58px;background:#101722;border:3px solid #526070;border-radius:18px;padding:8px;z-index:8;box-shadow:0 0 18px #00d9ff44;text-align:center}
+.moveLabel{position:absolute;left:50%;top:-31px;transform:translateX(-50%);background:#101722;color:white;font-weight:1000;padding:4px 22px;border-radius:8px;border:2px solid #2d4050}
+.moveText{font-size:26px;font-weight:1000;color:#ffdf30;text-shadow:0 0 12px #ffdf30}
+.windowBar{position:absolute;left:50%;bottom:138px;transform:translateX(-50%);width:78%;height:16px;border:2px solid #23455f;border-radius:12px;background:#08121d;z-index:8;overflow:hidden}
+.windowFill{height:100%;width:100%;background:linear-gradient(90deg,#33e879,#dfff35)}
+.controls{position:absolute;left:0;right:0;bottom:42px;height:86px;z-index:8;display:flex;gap:12px;justify-content:center;padding:0 14px}
+.ctrl{width:86px;border-radius:18px;border:3px solid #4beeff;background:linear-gradient(#155a75,#071522);color:#bffaff;font-size:28px;font-weight:1000;box-shadow:0 0 24px #00e5ff99;text-shadow:0 3px #05202d}
+.ctrl.fake{border-color:#ffdf30;color:#ffef70;background:linear-gradient(#514112,#111006);box-shadow:0 0 22px #ffdf3077;font-size:18px}
+.resultOverlay{position:absolute;inset:0;background:linear-gradient(#00000022,#000000c0);z-index:20;display:none;align-items:flex-end;justify-content:center;padding:0 18px 80px}
+.resultCard{width:100%;background:#07111ddd;border:2px solid #1e8fc5;border-radius:16px;padding:18px;text-align:center;box-shadow:0 0 24px #00d9ff55}
+.bigText{font-size:42px;font-weight:1000;text-shadow:0 5px #000,0 0 20px #fff;margin-bottom:6px}
+.subText{font-size:17px;font-weight:1000;color:#56eaff}.reward{margin:14px auto 16px;background:#071c18;border-radius:10px;padding:12px;font-size:18px;font-weight:900;width:82%}
+.continue{height:54px;width:190px;border-radius:10px;border:2px solid #38dfff;background:#0b2437;color:#7ef4ff;font-size:21px;font-weight:1000}
+.comboText{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);font-size:38px;font-weight:1000;color:#ffdf30;text-shadow:0 5px #000,0 0 22px #ffdf30;opacity:0;z-index:9;pointer-events:none}
+.comboText.show{animation:pop .6s ease}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}40%{opacity:1;transform:translate(-50%,-50%) scale(1.18)}100%{opacity:0;transform:translate(-50%,-75%) scale(1)}}
+@media(max-width:430px){
+.banner{display:none}.objective{width:126px;font-size:12px}.playerPanel{width:132px}.score{width:174px}.timerBox{min-width:112px}.coins{display:none}.controls{gap:7px}.ctrl{width:74px;font-size:24px}.ctrl.fake{font-size:15px}.moveText{font-size:22px}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="game"></canvas>
+
+<div class="topbar">
+  <div class="score"><span class="scoreNum">ÇALIM AT</span></div>
+  <div class="timerBox"><b>HAMLE</b><span id="roundText">1/3</span></div>
+  <div class="coins">⭐ +20</div>
+</div>
+
+<div class="banner"><b>RAKİP ÜSTÜNE GELİYOR!</b><br><span>Doğru hamleyi doğru zamanda yap</span></div>
+
+
+<div class="movePanel">
+  <div class="moveLabel">RAKİBİ OKU</div>
+  <div class="moveText" id="moveText">SAĞA ÇALIM!</div>
+</div>
+<div class="windowBar"><div class="windowFill" id="windowFill"></div></div>
+
+<div class="controls">
+  <button class="ctrl" data-move="left">←</button>
+  <button class="ctrl" data-move="right">→</button>
+  <button class="ctrl" data-move="nutmeg">△</button>
+  <button class="ctrl fake" data-move="fake">FAKE</button>
+</div>
+
+<div class="comboText" id="comboText">SKILL!</div>
+
+<div class="resultOverlay" id="resultOverlay">
+  <div class="resultCard">
+    <div class="bigText" id="resultText">GEÇTİN!</div>
+    <div class="subText" id="resultSub">GREAT DRIBBLE!</div>
+    <div class="reward" id="reward">+25 ⭐</div>
+    <button class="continue" onclick="sendMiniGameResult()">DEVAM ET</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d"),wrap=document.getElementById("wrap");
+let W,H,DPR;
+function resize(){DPR=Math.min(devicePixelRatio||1,2);W=wrap.clientWidth;H=wrap.clientHeight;canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);layout()}
+addEventListener("resize",resize);
+
+const moveText=document.getElementById("moveText"),windowFill=document.getElementById("windowFill"),roundText=document.getElementById("roundText");
+const resultOverlay=document.getElementById("resultOverlay"),resultText=document.getElementById("resultText"),resultSub=document.getElementById("resultSub"),reward=document.getElementById("reward"),comboText=document.getElementById("comboText");
+
+let lastMiniResult=null;
+let state="play";
+let round=1, successes=0, fails=0;
+let timeWindow=1.45, timeLeft=1.45;
+let required="right";
+let shake=0, flash=0;
+let player={x:0,y:0,targetX:0,anim:0,trail:[]};
+let enemy={x:0,y:0,stun:0,lunge:0};
+let ball={x:0,y:0};
+let scene={side:1,crowd:100,weather:"clear"};
+
+function rand(a,b){return a+Math.random()*(b-a)}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function lerp(a,b,t){return a+(b-a)*t}
+
+function layout(){
+ player.x=W*.48;
+ player.y=H*.68;
+ player.targetX=player.x;
+ enemy.x=W*.50;
+ enemy.y=H*.47;
+ ball.x=player.x+14;
+ ball.y=player.y+24;
+}
+resize();
+
+function randomizeScene(){
+ const weathers=["clear","fog","rain"];
+ scene.weather=weathers[Math.floor(Math.random()*weathers.length)];
+ scene.crowd=80+Math.floor(Math.random()*70);
+ scene.side=Math.random()<.5?1:-1;
+ enemy.x=W*rand(.43,.57);
+ enemy.y=H*rand(.42,.52);
+ player.x=W*rand(.40,.56);
+ player.targetX=player.x;
+ player.y=H*rand(.66,.74);
+}
+
+function nextMove(){
+ if(round>3){
+   finish(successes>=3?"win":"lose");
+   return;
+ }
+ const moves=["left","right","nutmeg","fake"];
+ required=moves[Math.floor(Math.random()*moves.length)];
+ const labels={left:"SOLA ÇALIM!",right:"SAĞA ÇALIM!",nutmeg:"BACAK ARASI!",fake:"FAKE AT!"};
+ moveText.textContent=labels[required];
+ roundText.textContent=round+"/3";
+ timeWindow=rand(1.15,1.75);
+ timeLeft=timeWindow;
+ state="play";
+}
+
+function resetRound(){
+ resultOverlay.style.display="none";
+ round=1;successes=0;fails=0;shake=0;flash=0;
+ randomizeScene();
+ nextMove();
+}
+
+document.querySelectorAll(".ctrl").forEach(btn=>{
+ btn.addEventListener("pointerdown",()=>handleMove(btn.dataset.move));
+ btn.addEventListener("touchstart",e=>{handleMove(btn.dataset.move);e.preventDefault()},{passive:false});
+});
+
+document.addEventListener("keydown",e=>{
+ if(e.key==="ArrowLeft")handleMove("left");
+ if(e.key==="ArrowRight")handleMove("right");
+ if(e.key==="ArrowUp")handleMove("nutmeg");
+ if(e.key===" ")handleMove("fake");
+});
+
+function handleMove(m){
+ if(state!=="play")return;
+ const timing=timeLeft/timeWindow;
+ const goodTiming=timing>.18 && timing<.92;
+ const correct=m===required;
+
+ if(correct && goodTiming){
+   success(m);
+ }else{
+   fail(m);
+ }
+}
+
+function success(m){
+ state="pause";
+ successes++;
+ shake=5; flash=.22;
+ enemy.stun=.8;
+ player.anim=1;
+ if(m==="left")player.targetX-=W*.10;
+ if(m==="right")player.targetX+=W*.10;
+ if(m==="nutmeg"){player.targetX+=rand(-20,20); ball.y-=35;}
+ if(m==="fake"){enemy.lunge=1; player.targetX+=scene.side*W*.08;}
+ showPop(m==="nutmeg"?"PANNA!":m==="fake"?"FAKE!":"SKILL!");
+ setTimeout(()=>{round++;nextMove()},520);
+}
+
+function fail(m){
+ state="pause";
+ fails++;
+ shake=7;
+ enemy.lunge=1;
+ player.anim=-1;
+ showPop("TOP KAYBI!");
+ setTimeout(()=>{round++;nextMove()},520);
+}
+
+function showPop(txt){
+ comboText.textContent=txt;
+ comboText.classList.remove("show");
+ void comboText.offsetWidth;
+ comboText.classList.add("show");
+}
+
+function buildMiniGameResult(r){
+ const ok=r==="win";
+ return {
+   source:"career-mini-game",
+   type:"dribble",
+   result:r,
+   success:ok,
+   label:ok?"Dribble Success":"Lost Possession",
+   ratingDelta: ok ? 0.5 : -1.5
+ };
+}
+
+function sendMiniGameResult(){
+ const payload=lastMiniResult || buildMiniGameResult("lose");
+ if(window.parent && window.parent!==window){
+   window.parent.postMessage(payload,"*");
+ }
+ setTimeout(()=>resetRound(),80);
+}
+
+function finish(r){
+ lastMiniResult=buildMiniGameResult(r);
+ state="result";
+ if(r==="win"){
+   resultText.textContent="GEÇTİN!";
+   resultText.style.color="#ffdf30";
+   resultSub.textContent=successes===3?"FLAWLESS DRIBBLE!":"GREAT DRIBBLE!";
+   reward.textContent=successes===3?"+35 ⭐  +10 REP":"+25 ⭐";
+   shake=10; flash=.45;
+ }else{
+   resultText.textContent="TOP KAYBI!";
+   resultText.style.color="#ff4f6d";
+   resultSub.textContent="RAKİP MÜDAHALE ETTİ!";
+   reward.textContent="MORAL -5";
+   shake=8;
+ }
+ setTimeout(()=>resultOverlay.style.display="flex",350);
+}
+
+function update(dt){
+ if(state==="play"){
+   timeLeft-=dt;
+   if(timeLeft<=0) fail("timeout");
+ }
+ const pct=clamp(timeLeft/timeWindow,0,1);
+ windowFill.style.width=(pct*100)+"%";
+ player.x=lerp(player.x,player.targetX,dt*5.5);
+ ball.x=lerp(ball.x,player.x+14,dt*8);
+ ball.y=lerp(ball.y,player.y+24,dt*7);
+ if(enemy.stun>0)enemy.stun-=dt;
+ if(enemy.lunge>0)enemy.lunge-=dt*1.7;
+ if(player.anim>0)player.anim-=dt*2.1;
+ if(player.anim<0)player.anim+=dt*2.1;
+ player.trail.push({x:player.x,y:player.y,a:1});
+ if(player.trail.length>8)player.trail.shift();
+ shake*=.88; flash*=.86;
+}
+
+function drawField(){
+ const g=ctx.createLinearGradient(0,70,0,H);g.addColorStop(0,"#164d26");g.addColorStop(1,"#083616");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ for(let i=0;i<11;i++){ctx.fillStyle=i%2?"rgba(255,255,255,.035)":"rgba(0,0,0,.055)";ctx.fillRect(0,74+i*76,W,76)}
+ ctx.fillStyle="#090922";ctx.fillRect(0,74,W,145);
+ for(let i=0;i<scene.crowd;i++){let colors=["#ff4ee2","#2df06c","#4d7cff","#ffe95b","#ff9143","#9b56ff","#40e4de"];ctx.fillStyle=colors[i%colors.length];ctx.beginPath();ctx.arc((i*23)%W,96+(i*29)%84,2.2,0,7);ctx.fill()}
+ if(scene.weather==="fog"){ctx.fillStyle="rgba(255,255,255,.07)";ctx.fillRect(0,0,W,H)}
+ if(scene.weather==="rain"){
+   ctx.strokeStyle="rgba(180,220,255,.23)";
+   for(let i=0;i<80;i++){const x=(i*57+performance.now()*.2)%W,y=(i*41+performance.now()*.5)%H;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-5,y+14);ctx.stroke()}
+ }
+ ctx.strokeStyle="rgba(255,255,255,.48)";ctx.lineWidth=2;
+ ctx.strokeRect(20,170,W-40,H-230);
+ ctx.beginPath();ctx.arc(W/2,H*.61,72,0,Math.PI*2);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(20,H*.61);ctx.lineTo(W-20,H*.61);ctx.stroke();
+}
+
+function drawPlayer(x,y,kit,num,scale=1,dir=1,tilt=0){
+ ctx.save();ctx.translate(x,y);ctx.rotate(tilt);ctx.scale(scale*dir,scale);
+ ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(0,38,26,7,0,0,7);ctx.fill();
+ if(kit==="main"){
+   ctx.fillStyle="#66c7ee";ctx.fillRect(-14,-58,28,16);
+   ctx.fillStyle="#ffd09b";ctx.fillRect(-18,-42,36,28);
+   ctx.fillStyle="#d25522";ctx.fillRect(-21,-14,42,46);
+   ctx.fillStyle="#8d1a1f";ctx.fillRect(-5,-14,10,46);
+ }else{
+   ctx.fillStyle="#1d2338";ctx.fillRect(-14,-58,28,16);
+   ctx.fillStyle="#ffd09b";ctx.fillRect(-18,-42,36,28);
+   ctx.fillStyle="#182137";ctx.fillRect(-21,-14,42,46);
+   ctx.fillStyle="#c82b3b";ctx.fillRect(-5,-14,10,46);
+ }
+ ctx.fillStyle="#ffd09b";ctx.fillRect(-33,-6,12,33);ctx.fillRect(21,-6,12,33);
+ ctx.fillStyle=kit==="enemy"?"#eee":"#d25522";ctx.fillRect(-17,32,13,34);ctx.fillRect(4,32,13,34);
+ ctx.fillStyle="#101820";ctx.fillRect(-19,64,16,7);ctx.fillRect(3,64,16,7);
+ ctx.fillStyle="#fff";ctx.font="bold 15px Arial";ctx.textAlign="center";if(num)ctx.fillText(num,0,18);
+ ctx.restore();
+}
+
+function drawBall(){
+ ctx.fillStyle="rgba(0,0,0,.30)";ctx.beginPath();ctx.ellipse(ball.x,ball.y+9,14,4,0,0,7);ctx.fill();
+ ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(ball.x,ball.y,9,0,7);ctx.fill();
+ ctx.fillStyle="#111";ctx.beginPath();ctx.arc(ball.x,ball.y,3.5,0,7);ctx.fill();
+}
+
+function drawArrows(){
+ ctx.strokeStyle="#ffdf30";ctx.lineWidth=5;ctx.shadowColor="#ffdf30";ctx.shadowBlur=15;
+ if(required==="left"){ctx.beginPath();ctx.moveTo(W*.43,H*.55);ctx.lineTo(W*.27,H*.55);ctx.stroke();}
+ if(required==="right"){ctx.beginPath();ctx.moveTo(W*.57,H*.55);ctx.lineTo(W*.73,H*.55);ctx.stroke();}
+ if(required==="nutmeg"){ctx.beginPath();ctx.moveTo(W*.50,H*.57);ctx.lineTo(W*.50,H*.43);ctx.stroke();}
+ if(required==="fake"){ctx.beginPath();ctx.arc(W*.50,H*.52,45,0,Math.PI*1.6);ctx.stroke();}
+ ctx.shadowBlur=0;
+}
+
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ ctx.save();
+ ctx.translate(rand(-shake,shake),rand(-shake,shake));
+ drawField();
+ drawArrows();
+ player.trail.forEach((p,i)=>{ctx.globalAlpha=i/player.trail.length*.25;drawPlayer(p.x,p.y,"main","",.92,1,0);});
+ ctx.globalAlpha=1;
+ drawPlayer(enemy.x+(enemy.lunge>0?scene.side*18:0),enemy.y,"enemy","5",.96,-1,enemy.stun>0?.25:0);
+ drawPlayer(player.x,player.y,"main","10",.98,1,player.anim*.25);
+ drawBall();
+ ctx.fillStyle="#fff";ctx.font="bold 18px Arial";ctx.textAlign="center";ctx.shadowColor="#000";ctx.shadowBlur=8;
+ ctx.fillText(`Başarılı: ${successes} / Hata: ${fails}`,W/2,H*.44);
+ ctx.shadowBlur=0;
+ ctx.restore();
+ if(flash>0){ctx.fillStyle=`rgba(255,255,255,${flash*.25})`;ctx.fillRect(0,0,W,H)}
+}
+
+let last=performance.now();
+function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop)}
+resetRound();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

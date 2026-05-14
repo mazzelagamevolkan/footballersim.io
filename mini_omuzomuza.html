@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Omuz Omuza Mücadele Mini Oyunu</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+body{margin:0;background:#030712;color:#fff;font-family:Arial,Helvetica,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:hidden}
+#wrap{width:min(100vw,520px);height:100vh;max-height:920px;position:relative;background:#07101f;overflow:hidden;border-left:1px solid #1e4968;border-right:1px solid #1e4968}
+canvas{width:100%;height:100%;display:block;background:#0b3518}
+.topbar{position:absolute;top:0;left:0;right:0;height:74px;background:#060b16ee;z-index:10;border-bottom:1px solid #18314c}
+.score{position:absolute;left:12px;top:10px;height:54px;width:210px;border:2px solid #1e7fb3;border-radius:12px;background:#111a2bcc;display:flex;align-items:center;justify-content:center;box-shadow:0 0 18px #00bfff28}
+.scoreNum{font-size:24px;font-weight:1000;letter-spacing:1px}
+.timerBox{position:absolute;left:50%;top:12px;transform:translateX(-50%);height:58px;min-width:135px;border:2px solid #1e7fb3;border-radius:12px;background:#050913ee;text-align:center;padding-top:5px;box-shadow:0 0 20px #000}
+.timerBox b{display:block;color:#dcecff;font-size:14px}.timerBox span{display:block;color:#ffdf30;font-size:28px;font-weight:1000}
+.coins{position:absolute;right:12px;top:12px;height:44px;min-width:102px;border:2px solid #1e7fb3;border-radius:10px;background:#0e1728;display:flex;align-items:center;justify-content:center;font-weight:1000}
+.banner{position:absolute;left:50%;top:84px;transform:translateX(-50%);background:#050913e8;border:2px solid #1e7fb3;border-radius:12px;text-align:center;padding:9px 22px;z-index:9;box-shadow:0 0 20px #000}
+.banner b{color:#ffcc27;font-size:20px}.banner span{font-weight:900;font-size:13px;color:#cfe7ff}
+.objective{position:absolute;top:84px;left:14px;background:#06111ddd;border:2px solid #1f8fc0;border-radius:10px;padding:10px 12px;z-index:7;font-weight:900;font-size:13px;color:#dff7ff;box-shadow:0 0 16px #00c8ff30;width:142px}
+.playerPanel{position:absolute;top:84px;right:14px;width:150px;background:#06111ddd;border:2px solid #1f8fc0;border-radius:10px;padding:10px 12px;z-index:7;box-shadow:0 0 16px #00c8ff30}
+.playerPanel b{color:#ff4ecb}.stat{font-size:12px;color:#69efff;font-weight:900;margin-top:8px}.bar{height:5px;background:#172234;border-radius:8px;margin-top:3px;overflow:hidden}.bar span{display:block;height:100%;background:#42ff8e}
+.duelBarWrap{position:absolute;left:50%;bottom:208px;transform:translateX(-50%);width:86%;height:52px;background:#101722;border:3px solid #526070;border-radius:18px;padding:7px;z-index:8;box-shadow:0 0 18px #00d9ff44}
+.duelLabel{position:absolute;left:50%;top:-31px;transform:translateX(-50%);background:#101722;color:white;font-weight:1000;padding:4px 22px;border-radius:8px;border:2px solid #2d4050}
+.duelTrack{position:relative;height:100%;border-radius:12px;background:linear-gradient(90deg,#22dd6a 0%,#c7ff35 42%,#fff 50%,#ffb42e 58%,#ff3d3d 100%);overflow:hidden}
+.centerLine{position:absolute;left:50%;top:-8px;width:4px;height:48px;background:#050914;border-radius:4px;z-index:3;box-shadow:0 0 5px #fff}
+.duelMarker{position:absolute;top:2px;left:50%;width:18px;height:30px;transform:translateX(-50%);background:#07101f;border:3px solid #fff;border-radius:8px;z-index:4;box-shadow:0 0 14px #fff}
+.staminaWrap{position:absolute;left:50%;bottom:172px;transform:translateX(-50%);width:68%;height:16px;border:2px solid #23455f;border-radius:12px;background:#08121d;z-index:8;overflow:hidden}
+.staminaFill{height:100%;width:100%;background:linear-gradient(90deg,#33e879,#dfff35)}
+.tapBtn{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);height:92px;width:230px;border-radius:24px;border:4px solid #4beeff;background:linear-gradient(#155a75,#071522);color:#bffaff;font-size:31px;font-weight:1000;z-index:8;box-shadow:0 0 32px #00e5ffcc;text-shadow:0 3px #05202d}
+.actionBtn{position:absolute;bottom:76px;width:96px;height:76px;border-radius:18px;font-size:15px;font-weight:1000;z-index:8}
+.balance{left:20px;border:3px solid #ffdf30;background:#10130d;color:#ffef70;box-shadow:0 0 20px #ffdf3077}
+.sprint{right:20px;border:3px solid #77ff37;background:#0d170b;color:#a5ff7e;box-shadow:0 0 20px #77ff3777}
+.resultOverlay{position:absolute;inset:0;background:linear-gradient(#00000022,#000000c0);z-index:20;display:none;align-items:flex-end;justify-content:center;padding:0 18px 80px}
+.resultCard{width:100%;background:#07111ddd;border:2px solid #1e8fc5;border-radius:16px;padding:18px;text-align:center;box-shadow:0 0 24px #00d9ff55}
+.bigText{font-size:40px;font-weight:1000;text-shadow:0 5px #000,0 0 20px #fff;margin-bottom:6px}
+.subText{font-size:17px;font-weight:1000;color:#56eaff}.reward{margin:14px auto 16px;background:#071c18;border-radius:10px;padding:12px;font-size:18px;font-weight:900;width:82%}
+.continue{height:54px;width:190px;border-radius:10px;border:2px solid #38dfff;background:#0b2437;color:#7ef4ff;font-size:21px;font-weight:1000}
+.hint{position:absolute;left:0;right:0;bottom:158px;text-align:center;font-size:20px;font-weight:1000;color:#ffea39;text-shadow:0 3px 4px #000;z-index:8}
+.comboText{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);font-size:38px;font-weight:1000;color:#ffdf30;text-shadow:0 5px #000,0 0 22px #ffdf30;opacity:0;z-index:9;pointer-events:none}
+.comboText.show{animation:pop .45s ease}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}40%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-72%) scale(1)}}
+@media(max-width:430px){
+.banner{display:none}.objective{width:126px;font-size:12px}.playerPanel{width:132px}.score{width:174px}.timerBox{min-width:112px}.coins{display:none}.duelBarWrap{width:90%;bottom:202px}.tapBtn{width:205px}.actionBtn{width:84px;height:70px;font-size:13px}.hint{font-size:17px}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="game"></canvas>
+
+<div class="topbar">
+  <div class="score"><span class="scoreNum">OMUZ OMUZA</span></div>
+  <div class="timerBox"><b>MÜCADELE</b><span id="timeText">06.0</span></div>
+  <div class="coins">⭐ +15</div>
+</div>
+
+<div class="banner"><b>TOPU KORU!</b><br><span>Rakibi geride bırak</span></div>
+
+<div class="duelBarWrap">
+  <div class="duelLabel">MÜCADELE BAR</div>
+  <div class="duelTrack">
+    <div class="centerLine"></div>
+    <div class="duelMarker" id="duelMarker"></div>
+  </div>
+</div>
+<div class="staminaWrap"><div class="staminaFill" id="staminaFill"></div></div>
+<div class="hint" id="hint">HIZLI TIKLA! Barı yeşile it</div>
+<div class="comboText" id="comboText">İT!</div>
+
+<button class="actionBtn balance" id="balanceBtn">DENGE<br><small>BASILI TUT</small></button>
+<button class="tapBtn" id="tapBtn">HIZLI TIKLA!</button>
+<button class="actionBtn sprint" id="sprintBtn">DEPAR<br><small>BOOST</small></button>
+
+<div class="resultOverlay" id="resultOverlay">
+  <div class="resultCard">
+    <div class="bigText" id="resultText">KAZANDIN!</div>
+    <div class="subText" id="resultSub">TOPU KORUDUN!</div>
+    <div class="reward" id="reward">+20 ⭐</div>
+    <button class="continue" onclick="sendMiniGameResult()">DEVAM ET</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d"),wrap=document.getElementById("wrap");
+let W,H,DPR;
+function resize(){DPR=Math.min(devicePixelRatio||1,2);W=wrap.clientWidth;H=wrap.clientHeight;canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);layout()}
+addEventListener("resize",resize);
+
+const marker=document.getElementById("duelMarker"),staminaFill=document.getElementById("staminaFill"),timeText=document.getElementById("timeText");
+const tapBtn=document.getElementById("tapBtn"),balanceBtn=document.getElementById("balanceBtn"),sprintBtn=document.getElementById("sprintBtn");
+const resultOverlay=document.getElementById("resultOverlay"),resultText=document.getElementById("resultText"),resultSub=document.getElementById("resultSub"),reward=document.getElementById("reward"),comboText=document.getElementById("comboText"),hint=document.getElementById("hint");
+
+let lastMiniResult=null;
+let state="ready";
+let duel=0;          // -100 rakip, +100 oyuncu
+let stamina=100;
+let timeLeft=6.0;
+let balanceHold=false;
+let sprintCooldown=0;
+let sprintBoost=0;
+let taps=0;
+let shake=0;
+let player={x:0,y:0,lean:0};
+let enemy={x:0,y:0,lean:0,strength:.72,aggression:.65};
+
+function rand(a,b){return a+Math.random()*(b-a)}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function lerp(a,b,t){return a+(b-a)*t}
+
+function layout(){
+ player.x=W*.44; player.y=H*.54;
+ enemy.x=W*.56; enemy.y=H*.535;
+}
+
+function resetRound(){
+ state="ready";
+ resultOverlay.style.display="none";
+ duel=rand(-8,8);
+ stamina=100;
+ timeLeft=6.0;
+ balanceHold=false;
+ sprintCooldown=0;
+ sprintBoost=0;
+ taps=0;
+ shake=0;
+ enemy.strength=rand(.58,.82);
+ enemy.aggression=rand(.50,.78);
+ hint.textContent="HIZLI TIKLA! Barı yeşile it";
+ layout();
+}
+resize(); resetRound();
+
+function startGame(){
+ if(state==="ready") state="play";
+}
+
+function tapPower(){
+ startGame();
+ if(state!=="play") return;
+ if(stamina<=4) return;
+ const boost = 6.2 + sprintBoost;
+ const fatigue = stamina<35 ? .58 : stamina<60 ? .78 : 1;
+ duel += boost * fatigue;
+ stamina -= sprintBoost>0 ? 2.4 : 1.35;
+ taps++;
+ shake=3;
+ showPop(taps%5===0 ? "GÜÇ!" : "İT!");
+}
+
+function useSprint(){
+ startGame();
+ if(state!=="play" || sprintCooldown>0 || stamina<18) return;
+ sprintBoost=5.2;
+ sprintCooldown=2.3;
+ stamina-=12;
+ shake=5;
+ showPop("DEPAR!");
+ setTimeout(()=>{sprintBoost=0},650);
+}
+
+function showPop(txt){
+ comboText.textContent=txt;
+ comboText.classList.remove("show");
+ void comboText.offsetWidth;
+ comboText.classList.add("show");
+}
+
+tapBtn.addEventListener("pointerdown",tapPower);
+tapBtn.addEventListener("touchstart",e=>{tapPower();e.preventDefault()},{passive:false});
+sprintBtn.addEventListener("pointerdown",useSprint);
+sprintBtn.addEventListener("touchstart",e=>{useSprint();e.preventDefault()},{passive:false});
+
+balanceBtn.addEventListener("pointerdown",()=>{startGame();balanceHold=true});
+balanceBtn.addEventListener("pointerup",()=>balanceHold=false);
+balanceBtn.addEventListener("pointerleave",()=>balanceHold=false);
+balanceBtn.addEventListener("touchstart",e=>{startGame();balanceHold=true;e.preventDefault()},{passive:false});
+balanceBtn.addEventListener("touchend",()=>balanceHold=false);
+
+function buildMiniGameResult(r){
+ const ok=r==="win" || r==="perfect";
+ return {
+   source:"career-mini-game",
+   type:"duel",
+   result:r,
+   success:ok,
+   label:r==="perfect"?"Dominant Duel":r==="win"?"Duel Won":r==="draw"?"Duel Draw":"Possession Lost",
+   ratingDelta: r==="perfect" ? 0.85 : ok ? 0.5 : -1.5
+ };
+}
+
+function sendMiniGameResult(){
+ const payload=lastMiniResult || buildMiniGameResult("lose");
+ if(window.parent && window.parent!==window){
+   window.parent.postMessage(payload,"*");
+ }
+ setTimeout(()=>resetRound(),80);
+}
+
+function finish(r){
+ lastMiniResult=buildMiniGameResult(r);
+ state="result";
+ if(r==="perfect"){
+   resultText.textContent="EZİP GEÇTİN!";
+   resultText.style.color="#ffdf30";
+   resultSub.textContent="OMUZ OMUZA DOMİNANT!";
+   reward.textContent="+30 ⭐  +10 REP";
+   shake=10;
+ }else if(r==="win"){
+   resultText.textContent="KAZANDIN!";
+   resultText.style.color="#7dff6a";
+   resultSub.textContent="TOPU KORUDUN!";
+   reward.textContent="+20 ⭐";
+   shake=8;
+ }else if(r==="draw"){
+   resultText.textContent="AYAKTA KALDIN!";
+   resultText.style.color="#72e8ff";
+   resultSub.textContent="TOP SENDE KALDI AMA ZORLANDIN";
+   reward.textContent="+8 ⭐";
+   shake=5;
+ }else{
+   resultText.textContent="KAYBETTİN!";
+   resultText.style.color="#ff4f6d";
+   resultSub.textContent="RAKİP TOPU ALDI!";
+   reward.textContent="MORAL -5";
+   shake=7;
+ }
+ setTimeout(()=>resultOverlay.style.display="flex",350);
+}
+
+function update(dt){
+ if(state==="play"){
+   timeLeft-=dt;
+   const enemyPush=(18+enemy.strength*26) * dt;
+   const balanceFactor=balanceHold && stamina>0 ? .38 : 1.0;
+   duel-=enemyPush*balanceFactor;
+
+   if(balanceHold && stamina>0){
+     stamina-=dt*9;
+     hint.textContent="DENGE: Rakip itişi azalıyor";
+   }else{
+     stamina=Math.min(100,stamina+dt*4.5);
+     hint.textContent=sprintCooldown>0 ? "DEPAR beklemede..." : "HIZLI TIKLA! Barı yeşile it";
+   }
+
+   if(sprintCooldown>0) sprintCooldown-=dt;
+   if(stamina<=0) stamina=0;
+   duel=clamp(duel,-100,100);
+
+   if(duel>=100){finish("perfect")}
+   else if(duel<=-100){finish("lose")}
+   else if(timeLeft<=0){
+     if(duel>42) finish("perfect");
+     else if(duel>8) finish("win");
+     else if(duel>-12) finish("draw");
+     else finish("lose");
+   }
+ }
+ marker.style.left=(50+duel/2)+"%";
+ staminaFill.style.width=stamina+"%";
+ timeText.textContent=Math.max(0,timeLeft).toFixed(1);
+ player.lean=lerp(player.lean,duel/100*0.22,.12);
+ enemy.lean=lerp(enemy.lean,-duel/100*0.22,.12);
+ shake*=.88;
+}
+
+function drawField(){
+ const g=ctx.createLinearGradient(0,70,0,H);g.addColorStop(0,"#164d26");g.addColorStop(1,"#083616");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ for(let i=0;i<11;i++){ctx.fillStyle=i%2?"rgba(255,255,255,.035)":"rgba(0,0,0,.055)";ctx.fillRect(0,74+i*76,W,76)}
+ ctx.fillStyle="#090922";ctx.fillRect(0,74,W,145);
+ for(let i=0;i<115;i++){let colors=["#ff4ee2","#2df06c","#4d7cff","#ffe95b","#ff9143","#9b56ff","#40e4de"];ctx.fillStyle=colors[i%colors.length];ctx.beginPath();ctx.arc((i*23)%W,96+(i*29)%84,2.2,0,7);ctx.fill()}
+ ctx.strokeStyle="rgba(255,255,255,.48)";ctx.lineWidth=2;
+ ctx.strokeRect(20,170,W-40,H-230);
+ ctx.beginPath();ctx.arc(W/2,H*.60,70,0,Math.PI*2);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(20,H*.60);ctx.lineTo(W-20,H*.60);ctx.stroke();
+}
+
+function drawPlayer(x,y,kit,num,scale=1,dir=1,lean=0){
+ ctx.save();
+ ctx.translate(x,y);
+ ctx.rotate(lean*dir);
+ ctx.scale(scale*dir,scale);
+ ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(0,38,26,7,0,0,7);ctx.fill();
+ if(kit==="main"){
+   ctx.fillStyle="#66c7ee";ctx.fillRect(-14,-58,28,16);
+   ctx.fillStyle="#ffd09b";ctx.fillRect(-18,-42,36,28);
+   ctx.fillStyle="#d25522";ctx.fillRect(-21,-14,42,46);
+   ctx.fillStyle="#8d1a1f";ctx.fillRect(-5,-14,10,46);
+ }else{
+   ctx.fillStyle="#1d2338";ctx.fillRect(-14,-58,28,16);
+   ctx.fillStyle="#ffd09b";ctx.fillRect(-18,-42,36,28);
+   ctx.fillStyle="#182137";ctx.fillRect(-21,-14,42,46);
+   ctx.fillStyle="#c82b3b";ctx.fillRect(-5,-14,10,46);
+ }
+ ctx.fillStyle="#ffd09b";
+ ctx.fillRect(-36,-6,13,36);ctx.fillRect(23,-6,13,36);
+ ctx.fillStyle=kit==="enemy"?"#eee":"#d25522";
+ ctx.fillRect(-17,32,13,34);ctx.fillRect(4,32,13,34);
+ ctx.fillStyle="#101820";ctx.fillRect(-19,64,16,7);ctx.fillRect(3,64,16,7);
+ ctx.fillStyle="#fff";ctx.font="bold 15px Arial";ctx.textAlign="center";if(num)ctx.fillText(num,0,18);
+ ctx.restore();
+}
+
+function drawBall(){
+ const bx=W*.50 + duel*.55, by=H*.60;
+ ctx.fillStyle="rgba(0,0,0,.32)";ctx.beginPath();ctx.ellipse(bx,by+12,15,5,0,0,7);ctx.fill();
+ ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(bx,by,9,0,7);ctx.fill();
+ ctx.fillStyle="#111";ctx.beginPath();ctx.arc(bx,by,3.5,0,7);ctx.fill();
+}
+
+function drawFX(){
+ const bx=W*.50 + duel*.55, by=H*.60;
+ ctx.strokeStyle=duel>0?"rgba(125,255,106,.75)":"rgba(255,79,109,.75)";
+ ctx.lineWidth=5;
+ ctx.beginPath();
+ ctx.arc(bx,by+8,42,Math.PI*.08,Math.PI*.92);
+ ctx.stroke();
+ if(balanceHold){
+   ctx.strokeStyle="#ffdf30";ctx.lineWidth=4;
+   ctx.beginPath();ctx.arc(player.x,player.y,48,0,Math.PI*2);ctx.stroke();
+ }
+ if(sprintBoost>0){
+   ctx.fillStyle="rgba(125,255,106,.35)";
+   for(let i=0;i<12;i++){ctx.beginPath();ctx.arc(player.x-40-rand(0,35),player.y+rand(-20,45),rand(2,5),0,7);ctx.fill();}
+ }
+}
+
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ ctx.save();
+ ctx.translate(rand(-shake,shake),rand(-shake,shake));
+ drawField();
+ drawFX();
+ drawPlayer(player.x,player.y,"main","10",1.04,1,player.lean);
+ drawPlayer(enemy.x,enemy.y,"enemy","5",1.04,-1,enemy.lean);
+ drawBall();
+ ctx.fillStyle="#ffdf30";ctx.font="bold 24px Arial";ctx.textAlign="center";ctx.shadowColor="#000";ctx.shadowBlur=8;
+ if(state==="ready")ctx.fillText("Başlamak için hızlı tıkla!",W/2,H*.44);
+ else if(state==="play")ctx.fillText(duel>=0?"OMUZ OMUZA!":"DİREN!",W/2,H*.44);
+ ctx.shadowBlur=0;
+ ctx.restore();
+}
+
+let last=performance.now();
+function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
