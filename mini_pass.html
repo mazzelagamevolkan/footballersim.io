@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Pas Arcade Mini Oyunu</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#030712;color:#fff;font-family:Arial,Helvetica,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:hidden}
+#wrap{width:min(100vw,520px);height:100vh;max-height:920px;position:relative;background:#07101f;overflow:hidden;border-left:1px solid #1e4968;border-right:1px solid #1e4968}
+canvas{width:100%;height:100%;display:block;background:#0b3518}
+.topbar{position:absolute;top:0;left:0;right:0;height:74px;background:#060b16ee;z-index:10;border-bottom:1px solid #18314c}
+.pause{position:absolute;right:12px;top:12px;width:48px;height:48px;border:2px solid #2e8fca;border-radius:10px;background:#0b1830;color:white;font-size:27px;font-weight:900;box-shadow:0 0 14px #00bfff44}
+.score{position:absolute;left:12px;top:10px;height:54px;width:220px;border:2px solid #1e7fb3;border-radius:12px;background:#111a2bcc;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 0 18px #00bfff28}
+.scoreNum{font-size:32px;font-weight:1000;letter-spacing:2px}
+.team{font-size:13px;color:#dbe7f7;font-weight:900}
+.minute{position:absolute;left:84px;top:53px;background:#0e1728;border:2px solid #1e7fb3;border-radius:7px;padding:2px 16px;font-weight:900;font-size:15px;z-index:11}
+.coins{position:absolute;right:78px;top:12px;height:44px;min-width:128px;border:2px solid #1e7fb3;border-radius:10px;background:#0e1728;display:flex;align-items:center;gap:14px;justify-content:center;font-weight:1000}
+.banner{position:absolute;left:50%;top:25px;transform:translateX(-50%);width:310px;max-width:48%;background:#050913e8;border:2px solid #1e7fb3;border-radius:10px;text-align:center;padding:9px 10px;z-index:12;box-shadow:0 0 20px #000}
+.banner b{color:#ffcc27;font-size:20px}.banner span{font-weight:900;font-size:14px}
+.objective{position:absolute;top:84px;left:14px;background:#06111ddd;border:2px solid #1f8fc0;border-radius:10px;padding:10px 12px;z-index:7;font-weight:900;font-size:13px;color:#dff7ff;box-shadow:0 0 16px #00c8ff30;width:140px}
+.playerPanel{position:absolute;top:84px;right:14px;width:150px;background:#06111ddd;border:2px solid #1f8fc0;border-radius:10px;padding:10px 12px;z-index:7;box-shadow:0 0 16px #00c8ff30}
+.playerPanel b{color:#ff4ecb}.stat{font-size:12px;color:#69efff;font-weight:900;margin-top:8px}.bar{height:5px;background:#172234;border-radius:8px;margin-top:3px;overflow:hidden}.bar span{display:block;height:100%;background:#42ff8e}
+.help{position:absolute;right:14px;bottom:262px;width:190px;z-index:7}
+.helpBox{background:#06111ddd;border:2px solid #1f8fc0;border-radius:10px;padding:10px;margin-bottom:8px;font-size:13px;font-weight:900;line-height:1.25}
+.passTypes{position:absolute;right:14px;bottom:170px;width:190px;background:#06111ddd;border:2px solid #1f8fc0;border-radius:10px;padding:10px;z-index:7}
+.passTypes h3{margin:0 0 8px;text-align:center;font-size:16px}
+.passBtn{height:34px;width:100%;margin:4px 0;border-radius:8px;border:1px solid #31455b;background:#0c1420;color:#dceaff;font-weight:900;text-align:left;padding-left:12px;font-size:12px}
+.passBtn.active{border-color:#00eaff;background:#073247;color:#7ff7ff;box-shadow:0 0 14px #00d9ff88}
+.powerWrap{position:absolute;left:50%;bottom:78px;transform:translateX(-50%);width:330px;max-width:66%;height:46px;background:#101722;border:3px solid #526070;border-radius:18px;padding:7px;z-index:8;box-shadow:0 0 18px #00d9ff44}
+.powerLabel{position:absolute;left:50%;top:-28px;transform:translateX(-50%);background:#101722;color:white;font-weight:1000;padding:4px 18px;border-radius:8px;border:2px solid #2d4050}
+.powerFill{height:100%;border-radius:12px;background:linear-gradient(90deg,#e63030 0%,#ff8e18 32%,#ffea30 55%,#42d73b 76%,#0b111c 77%);width:0%}
+.marker{position:absolute;top:3px;width:5px;height:40px;background:white;border-radius:4px;box-shadow:0 0 9px #fff}
+.passMain{position:absolute;left:50%;bottom:0px;transform:translateX(-50%);height:66px;width:205px;border-radius:18px;border:3px solid #4beeff;background:linear-gradient(#124b61,#071522);color:#bffaff;font-size:29px;font-weight:1000;z-index:8;box-shadow:0 0 28px #00e5ffcc;text-shadow:0 3px #05202d}
+.joystick{position:absolute;left:36px;bottom:115px;width:120px;height:120px;border-radius:50%;border:2px solid #607891;background:#0b1422aa;z-index:6;box-shadow:0 0 15px #000 inset}
+.joystick:after{content:"";position:absolute;left:34px;top:34px;width:52px;height:52px;border-radius:50%;background:#111c2c;border:2px solid #2c4059;box-shadow:0 0 15px #000}
+.joytxt{position:absolute;left:46px;bottom:88px;color:#dcecff;font-size:12px;font-weight:900;z-index:6}
+.resultOverlay{position:absolute;inset:0;background:linear-gradient(#00000022,#000000c0);z-index:20;display:none;align-items:flex-end;justify-content:center;padding:0 18px 80px}
+.resultCard{width:100%;background:#07111ddd;border:2px solid #1e8fc5;border-radius:16px;padding:18px;text-align:center;box-shadow:0 0 24px #00d9ff55}
+.bigText{font-size:38px;font-weight:1000;text-shadow:0 5px #000,0 0 20px #fff;margin-bottom:6px}
+.subText{font-size:17px;font-weight:1000;color:#56eaff}.reward{margin:14px auto 16px;background:#071c18;border-radius:10px;padding:12px;font-size:18px;font-weight:900;width:82%}
+.continue{height:54px;width:190px;border-radius:10px;border:2px solid #38dfff;background:#0b2437;color:#7ef4ff;font-size:21px;font-weight:1000}
+
+
+@media(max-width:430px){
+.banner{display:none}.playerPanel{width:132px}.passTypes{width:168px;right:8px}.help{display:none}.objective{width:126px;font-size:12px}.score{width:185px}.coins{display:none}.powerWrap{left:44%;max-width:60%}.joystick{width:104px;height:104px;left:24px}.joytxt{left:28px}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="game"></canvas>
+
+<div class="topbar">
+  <div class="score"><span class="team">KRİTİK PAS</span></div>
+  <div class="minute">81:24</div>
+  <div class="coins">🧑‍🧑‍🧒‍🧒 1.250&nbsp;&nbsp;</div>
+</div>
+
+<div class="objective">
+HEDEF<br>⭐ Asist yap <span style="color:#4dfcff">(0/1)</span><br><br>
+</div>
+
+
+
+<div class="passTypes">
+<h3>PAS TİPİ</h3>
+<button class="passBtn active" data-type="normal">➤ NORMAL PASS</button>
+<button class="passBtn" data-type="lob">⌒ LOB PASS</button>
+<button class="passBtn" data-type="one">⚡ ONE TOUCH</button>
+</div>
+
+
+<div class="powerWrap">
+<div class="powerLabel">PAS GÜCÜ</div>
+<div class="powerFill" id="powerFill"></div>
+<div class="marker" id="marker"></div>
+</div>
+<button class="passMain" id="passMain">PASS!</button>
+
+
+
+<div class="resultOverlay" id="resultOverlay">
+  <div class="resultCard">
+    <div class="bigText" id="resultText">PERFECT PASS!</div>
+    <div class="subText" id="resultSub">PLAYMAKER!</div>
+    <div class="reward" id="reward">+15 ⭐</div>
+    <button class="continue" onclick="sendMiniGameResult()">DEVAM ET</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d"),wrap=document.getElementById("wrap");
+let W,H,DPR;
+function resize(){DPR=Math.min(devicePixelRatio||1,2);W=wrap.clientWidth;H=wrap.clientHeight;canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);resetPositions(false)}
+addEventListener("resize",resize);
+
+const powerFill=document.getElementById("powerFill"),marker=document.getElementById("marker"),passMain=document.getElementById("passMain");
+const resultOverlay=document.getElementById("resultOverlay"),resultText=document.getElementById("resultText"),resultSub=document.getElementById("resultSub"),reward=document.getElementById("reward");
+
+let lastMiniResult=null;
+let state="select",power=.66,powerDir=1,passType="normal",selected=null,shake=0,combo=0;
+const ball={x:0,y:0,startX:0,startY:0,targetX:0,targetY:0,drawX:0,drawY:0,r:8,flightT:0,flightSpeed:1.2,arc:0,curve:0,moving:false,trail:[]};
+const passer={x:0,y:0};
+let teammates=[],defenders=[];
+
+function rand(a,b){return a+Math.random()*(b-a)}
+function lerp(a,b,t){return a+(b-a)*t}
+function ease(t){return 1-Math.pow(1-t,3)}
+
+function resetPositions(force=true){
+ if(!W) return;
+
+ // Her tur farklı sahne üret.
+ const scenario = Math.floor(Math.random()*7);
+
+ // Oyuncu başlangıç pozisyonu alt bölgede ama her seferinde değişir.
+ passer.x = W * rand(.28,.50);
+ passer.y = H * rand(.66,.76);
+
+ ball.x=passer.x+22; 
+ ball.y=passer.y+18; 
+ ball.drawX=ball.x; 
+ ball.drawY=ball.y;
+
+ const clampX = v => Math.max(W*.12, Math.min(W*.88, v));
+ const clampY = v => Math.max(H*.24, Math.min(H*.64, v));
+
+ // Temel senaryo havuzu. Artık her sahnede aynı sayıda oyuncu/rakip yok.
+ const scenarios = [
+   [
+    {x:.35,y:.43,run:false},{x:.72,y:.49,run:false},{x:.62,y:.30,tx:.69,ty:.24,run:true},{x:.22,y:.54,run:false},{x:.50,y:.38,run:false}
+   ],
+   [
+    {x:.28,y:.42,run:false},{x:.66,y:.52,run:false},{x:.30,y:.34,tx:.20,ty:.27,run:true},{x:.76,y:.43,run:false},{x:.52,y:.47,run:false}
+   ],
+   [
+    {x:.40,y:.45,run:false},{x:.58,y:.40,run:false},{x:.50,y:.32,tx:.51,ty:.24,run:true},{x:.75,y:.55,run:false},{x:.25,y:.55,run:false}
+   ],
+   [
+    {x:.34,y:.50,run:false},{x:.78,y:.39,run:false},{x:.80,y:.31,tx:.86,ty:.25,run:true},{x:.20,y:.45,run:false},{x:.56,y:.54,run:false}
+   ],
+   [
+    {x:.31,y:.49,run:false},{x:.68,y:.43,run:false},{x:.42,y:.34,tx:.35,ty:.25,run:true},{x:.78,y:.55,run:false},{x:.54,y:.38,run:false}
+   ],
+   // Koşusuz kısa pas / tiki-taka sahnesi
+   [
+    {x:.30,y:.50,run:false},{x:.47,y:.42,run:false},{x:.67,y:.46,run:false},{x:.76,y:.57,run:false}
+   ],
+   // Koşusuz kalabalık merkez sahnesi
+   [
+    {x:.25,y:.44,run:false},{x:.42,y:.36,run:false},{x:.58,y:.42,run:false},{x:.72,y:.50,run:false},{x:.36,y:.57,run:false},{x:.63,y:.60,run:false}
+   ]
+ ];
+
+ const base = scenarios[scenario];
+
+ // Bu tur koşu var mı? Yaklaşık %55 koşulu, %45 koşusuz.
+ const allowRun = Math.random() < .55;
+ let runUsed = false;
+
+ // Pas verilecek oyuncu sayısı 3-6 arasında random.
+ const teammateCount = Math.min(base.length, 2 + Math.floor(Math.random()*3));
+
+ // Base oyuncuları karıştır ve kes.
+ const shuffled = [...base].sort(()=>Math.random()-.5).slice(0, teammateCount);
+
+ teammates = shuffled.map((p,i)=>{
+   const shouldRun = allowRun && !runUsed && p.run && Math.random() < .80;
+   if(shouldRun) runUsed = true;
+
+   // Eğer base'te koşu yoksa ama allowRun true ise, nadiren bir oyuncuyu koşuya çıkar.
+   const forceRun = allowRun && !runUsed && i===shuffled.length-1 && Math.random() < .45;
+   const finalRun = shouldRun || forceRun;
+
+   const px = p.x + rand(-.045,.045);
+   const py = p.y + rand(-.035,.035);
+
+   let tx = p.tx ?? p.x;
+   let ty = p.ty ?? p.y;
+
+   if(forceRun){
+     tx = px + rand(-.08,.08);
+     ty = py - rand(.07,.13);
+     runUsed = true;
+   }
+
+   return {
+     x: clampX(W*px),
+     y: clampY(H*py),
+     tx: clampX(W*(tx + rand(-.030,.030))),
+     ty: clampY(H*(ty + rand(-.025,.025))),
+     run: finalRun,
+     receive: finalRun ? 36 : 31,
+     id:i,
+     dir: Math.random()<.5 ? 1 : -1
+   };
+ });
+
+ // Savunmacı sayısı 2-6 arasında random.
+ defenders = [];
+ const defenderCount = 3 + Math.floor(Math.random()*4);
+
+ for(let i=0;i<defenderCount;i++){
+   const laneT = rand(.22,.86);
+   const baseTarget = teammates[Math.floor(Math.random()*teammates.length)];
+   const lx = lerp(passer.x, baseTarget.x, laneT);
+   const ly = lerp(passer.y, baseTarget.y, laneT);
+   defenders.push({
+     x: clampX(lx + rand(-70,70)),
+     y: clampY(ly + rand(-55,55)),
+     range: rand(22,33),
+     smart: rand(.42,.76),
+     dir: Math.random()<.5 ? 1 : -1
+   });
+ }
+
+ // Koşu varsa bazen onu hedef yap, yoksa random takım arkadaşı hedef olsun.
+ const runner = teammates.find(t=>t.run);
+ selected = (runner && Math.random() < .65) ? runner : teammates[Math.floor(Math.random()*teammates.length)];
+}
+resize();
+
+document.querySelectorAll(".passBtn").forEach(b=>{
+ b.onclick=()=>{document.querySelectorAll(".passBtn").forEach(x=>x.classList.remove("active"));b.classList.add("active");passType=b.dataset.type}
+});
+
+function resetRound(){
+ state="select";resultOverlay.style.display="none";ball.moving=false;ball.trail=[];ball.flightT=0;shake=0;resetPositions();
+}
+function pointer(e){const r=canvas.getBoundingClientRect();const p=e.touches?e.touches[0]:e;return{x:p.clientX-r.left,y:p.clientY-r.top}}
+canvas.addEventListener("pointerdown",e=>selectTarget(pointer(e)));
+canvas.addEventListener("touchstart",e=>{selectTarget(pointer(e));e.preventDefault()},{passive:false});
+
+function selectTarget(p){
+ if(state!=="select")return;
+ let best=null,bd=9999;
+ teammates.forEach(t=>{const d=Math.hypot(p.x-t.x,p.y-t.y);if(d<bd){bd=d;best=t}});
+ if(best&&bd<75) selected=best;
+}
+
+passMain.onclick=passBall;
+function quality(){if(power>.62&&power<.79)return"perfect";if(power>.42&&power<.9)return"good";return"bad"}
+
+function passBall(){
+ if(state!=="select"||!selected)return;
+ state="pass";resultOverlay.style.display="none";
+ const q=quality();
+ let spread=q==="perfect"?5:q==="good"?20:42;
+ if(passType==="nolook")spread+=14;
+ if(passType==="one")spread+=10;
+ if(passType==="through")spread-=7;
+ if(passType==="lob")spread+=3;
+
+ let tx=selected.run?selected.tx:selected.x;
+ let ty=selected.run?selected.ty:selected.y;
+ if(passType==="through"){tx+=12;ty-=38}
+ tx+=rand(-spread,spread);ty+=rand(-spread,spread);
+
+ ball.startX=ball.x;ball.startY=ball.y;ball.targetX=tx;ball.targetY=ty;ball.flightT=0;
+ ball.flightSpeed=1.08+power*.8+(passType==="one"?.45:0);
+ ball.arc=passType==="lob"?120:passType==="through"?36:12;
+ ball.curve=passType==="nolook"?rand(-42,42):rand(-18,18);
+ ball.moving=true;ball.trail=[];shake=3;
+}
+
+function updatePlayers(dt){
+ teammates.forEach((t,i)=>{
+  if(t.run){
+    t.x=lerp(t.x,t.tx,dt*.95);
+    t.y=lerp(t.y,t.ty,dt*.95);
+  } else {
+    t.x+=Math.sin(performance.now()/700+i)*.08;
+  }
+ });
+ defenders.forEach((d,i)=>{
+  if(state==="pass" && ball.moving){
+    const react=.45+d.smart*.65;
+    d.x=lerp(d.x,ball.x,dt*react*.45);
+    d.y=lerp(d.y,ball.y,dt*react*.45);
+  } else {
+    d.x+=Math.sin(performance.now()/620+i)*.16;
+    d.y+=Math.cos(performance.now()/810+i)*.08;
+  }
+ });
+}
+
+function update(dt){
+ if(state==="select"){
+  power+=powerDir*dt*.9;if(power>1){power=1;powerDir=-1}if(power<0){power=0;powerDir=1}
+ }
+ powerFill.style.width=(power*100)+"%";marker.style.left=(power*100)+"%";
+ updatePlayers(dt);
+
+ if(state==="pass"){
+  ball.flightT=Math.min(1,ball.flightT+dt*ball.flightSpeed);
+  const t=ball.flightT,e=ease(t),arcY=Math.sin(Math.PI*t)*ball.arc,curveX=Math.sin(Math.PI*t)*ball.curve;
+  ball.x=lerp(ball.startX,ball.targetX,e)+curveX;
+  ball.y=lerp(ball.startY,ball.targetY,e);
+  ball.drawX=ball.x;ball.drawY=ball.y-arcY;
+  ball.trail.push({x:ball.drawX,y:ball.drawY});if(ball.trail.length>20)ball.trail.shift();
+
+  const isAirborne=arcY>34;
+  if(!isAirborne){
+    for(const d of defenders){
+      if(Math.hypot(ball.x-d.x,ball.y-d.y)<d.range){finish("intercept");return;}
+    }
+  }
+  if(t>=1) finish(checkPassResult());
+ }
+ shake*=.88;
+}
+
+function checkPassResult(){
+ const target=selected;
+ const d=Math.hypot(ball.targetX-target.x,ball.targetY-target.y);
+ if(target.run && ball.targetY < H*.20) return "offside";
+ if(d<target.receive){
+   if(passType==="through")return"through";
+   if(passType==="lob")return"lob";
+   if(quality()==="perfect")return"perfect";
+   return"success";
+ }
+ if(d<target.receive+34)return"bad";
+ return"bad";
+}
+
+
+function buildMiniGameResult(r){
+  const ok = ["perfect","through","lob","success"].includes(r);
+  const labels = {
+    perfect:"Perfect Pass",
+    through:"Through Ball",
+    lob:"Lob Pass",
+    success:"Successful Pass",
+    intercept:"Intercepted",
+    offside:"Offside",
+    bad:"Bad Pass"
+  };
+  return {
+    source:"career-mini-game",
+    type:"pass",
+    result:r,
+    success:ok,
+    label:labels[r] || "Pass",
+    ratingDelta: ok ? (r==="through" || r==="lob" ? 0.85 : 0.5) : -1.5
+  };
+}
+function sendMiniGameResult(){
+  const payload = lastMiniResult || buildMiniGameResult("bad");
+
+  // Career simulator içine gömülü çalışıyorsa parent'a gönder.
+  if(window.parent && window.parent !== window){
+    window.parent.postMessage(payload, "*");
+  }
+
+  // Standalone çalışıyorsa yeni round başlat.
+  setTimeout(()=>{
+    resetRound();
+  }, 80);
+}
+
+function finish(r){
+ lastMiniResult=buildMiniGameResult(r);
+ state="result";ball.moving=false;shake=8;
+ if(r==="perfect"){combo++;resultText.textContent="PERFECT PASS!";resultText.style.color="#a6ff33";resultSub.textContent="PLAYMAKER!";reward.textContent="+15 ⭐  KOMBO x"+combo}
+ if(r==="through"){combo++;resultText.textContent="ARA PAS!";resultText.style.color="#d7ff34";resultSub.textContent="DEFENSE SPLITTER!";reward.textContent="+25 ⭐  ASIST ŞANSI"}
+ if(r==="lob"){combo++;resultText.textContent="LOB PASS!";resultText.style.color="#72e8ff";resultSub.textContent="HAVADAN GEÇTİ!";reward.textContent="+20 ⭐"}
+ if(r==="success"){combo++;resultText.textContent="BAŞARILI PAS!";resultText.style.color="#60ff9a";resultSub.textContent="TEMİZ OYUN";reward.textContent="+10 ⭐"}
+ if(r==="intercept"){combo=0;resultText.textContent="INTERCEPTED!";resultText.style.color="#ff3d3d";resultSub.textContent="RAKİP ARAYA GİRDİ";reward.textContent="MORAL -5"}
+ if(r==="offside"){combo=0;resultText.textContent="OFFSIDE!";resultText.style.color="#ff3d3d";resultSub.textContent="ÇOK ERKEN ATTIN";reward.textContent="REPUTATION -3"}
+ if(r==="bad"){combo=0;resultText.textContent="BAD PASS!";resultText.style.color="#ff5b5b";resultSub.textContent="GÜCÜ / HEDEFİ AYARLA";reward.textContent="MORAL -3"}
+ setTimeout(()=>resultOverlay.style.display="flex",350);
+}
+
+function drawField(){
+ const g=ctx.createLinearGradient(0,70,0,H);g.addColorStop(0,"#164d26");g.addColorStop(1,"#083616");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ for(let i=0;i<11;i++){ctx.fillStyle=i%2?"rgba(255,255,255,.035)":"rgba(0,0,0,.055)";ctx.fillRect(0,74+i*76,W,76)}
+ ctx.fillStyle="#090922";ctx.fillRect(0,74,W,150);
+ for(let i=0;i<105;i++){let colors=["#ff4ee2","#2df06c","#4d7cff","#ffe95b","#ff9143","#9b56ff","#40e4de"];ctx.fillStyle=colors[i%colors.length];ctx.beginPath();ctx.arc((i*23)%W,96+(i*29)%88,2.2,0,7);ctx.fill()}
+ ctx.fillStyle="#5d1720";ctx.fillRect(120,145,280,28);ctx.fillStyle="#9f6b19";ctx.font="bold 22px Arial";ctx.textAlign="center";ctx.fillText("1905",W/2,166);
+ ctx.strokeStyle="rgba(255,255,255,.48)";ctx.lineWidth=2;
+ ctx.strokeRect(20,170,W-40,H-230);
+ ctx.strokeRect(W*.2,180,W*.6,125);
+ ctx.strokeRect(W*.36,160,W*.28,23);
+ ctx.beginPath();ctx.arc(W/2,H*.64,67,0,Math.PI*2);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(20,H*.64);ctx.lineTo(W-20,H*.64);ctx.stroke();
+}
+
+function drawGoalKeeperAtGoal(){
+ const x=W/2,y=210;
+ ctx.save();ctx.translate(x,y);
+ ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(0,35,24,6,0,0,7);ctx.fill();
+ ctx.fillStyle="#0c8a42";ctx.fillRect(-14,-30,28,50);
+ ctx.fillStyle="#ffd09b";ctx.fillRect(-12,-50,24,22);
+ ctx.fillStyle="#0a6f35";ctx.fillRect(-28,-10,12,26);ctx.fillRect(16,-10,12,26);
+ ctx.fillStyle="#0a6f35";ctx.fillRect(-16,20,12,32);ctx.fillRect(4,20,12,32);
+ ctx.restore();
+}
+
+function drawPlayer(x,y,kit,num,scale=1,dir=1){
+ ctx.save();ctx.translate(x,y+Math.sin(performance.now()/260+x)*1.2);ctx.scale(scale*dir,scale);
+ ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(0,32,22,6,0,0,7);ctx.fill();
+ if(kit==="main"){ctx.fillStyle="#66c7ee";ctx.fillRect(-14,-48,28,16);ctx.fillStyle="#ffd09b";ctx.fillRect(-17,-32,34,28);ctx.fillStyle="#d25522";ctx.fillRect(-18,-4,36,36);ctx.fillStyle="#8d1a1f";ctx.fillRect(-4,-4,8,36)}
+ else {ctx.fillStyle="#1d2338";ctx.fillRect(-14,-48,28,16);ctx.fillStyle="#ffd09b";ctx.fillRect(-17,-32,34,28);ctx.fillStyle="#182137";ctx.fillRect(-18,-4,36,36);ctx.fillStyle="#c82b3b";ctx.fillRect(-4,-4,8,36)}
+ ctx.fillStyle="#ffd09b";ctx.fillRect(-26,2,8,28);ctx.fillRect(18,2,8,28);
+ ctx.fillStyle=kit==="enemy"?"#eee":"#d25522";ctx.fillRect(-16,32,12,28);ctx.fillRect(4,32,12,28);
+ ctx.fillStyle="#101820";ctx.fillRect(-18,58,15,6);ctx.fillRect(3,58,15,6);
+ ctx.fillStyle="#fff";ctx.font="bold 14px Arial";ctx.textAlign="center";if(num)ctx.fillText(num,0,22);
+ ctx.restore();
+}
+
+function drawRing(x,y,color){
+ const p=1+Math.sin(performance.now()/220)*.08;
+ ctx.shadowColor=color;ctx.shadowBlur=18;ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,30*p,0,7);ctx.stroke();ctx.shadowBlur=0;
+}
+
+function drawPassingCone(){
+ if(!selected||state!=="pass"||ball.flightT>.35)return;
+ ctx.save();ctx.globalAlpha=.32;ctx.fillStyle="#f1a900";ctx.strokeStyle="#ff5030";ctx.lineWidth=2;
+ ctx.beginPath();ctx.moveTo(passer.x,passer.y);ctx.lineTo(selected.x-50,selected.y+30);ctx.lineTo(selected.x+50,selected.y+30);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+}
+
+function drawArrowLine(){
+ if(!selected||state!=="select")return;
+ ctx.setLineDash([7,8]);ctx.strokeStyle="rgba(255,255,255,.86)";ctx.lineWidth=4;
+ ctx.beginPath();ctx.moveTo(ball.x,ball.y);ctx.quadraticCurveTo((ball.x+selected.x)/2,H*.52,selected.x,selected.y);ctx.stroke();ctx.setLineDash([]);
+ ctx.strokeStyle="#e7ff4d";ctx.lineWidth=5;ctx.shadowColor="#e7ff4d";ctx.shadowBlur=16;
+ ctx.beginPath();ctx.moveTo(ball.x,ball.y);ctx.quadraticCurveTo((ball.x+selected.x)/2,H*.52,selected.x,selected.y);ctx.stroke();ctx.shadowBlur=0;
+ ctx.fillStyle="#ffff5a";ctx.beginPath();ctx.moveTo(selected.x,selected.y-13);ctx.lineTo(selected.x+18,selected.y+4);ctx.lineTo(selected.x-7,selected.y+8);ctx.fill();
+}
+
+function drawBall(){
+ ball.trail.forEach((p,i)=>{ctx.globalAlpha=i/ball.trail.length*.42;ctx.fillStyle=passType==="lob"?"#bdf8ff":"white";ctx.beginPath();ctx.arc(p.x,p.y,8*i/ball.trail.length,0,7);ctx.fill()});ctx.globalAlpha=1;
+ const bx=ball.moving?ball.drawX:ball.x,by=ball.moving?ball.drawY:ball.y;
+ ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(bx,ball.y+9,13,4,0,0,7);ctx.fill();
+ if(ball.moving && passType==="lob"){
+   ctx.strokeStyle="rgba(120,240,255,.35)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx,ball.y+8);ctx.stroke();
+ }
+ ctx.fillStyle="white";ctx.beginPath();ctx.arc(bx,by,8,0,7);ctx.fill();ctx.fillStyle="#111";ctx.beginPath();ctx.arc(bx,by,3,0,7);ctx.fill();
+}
+
+function draw(){
+ ctx.clearRect(0,0,W,H);ctx.save();ctx.translate(rand(-shake,shake),rand(-shake,shake));
+ drawField();drawGoalKeeperAtGoal();
+ defenders.forEach((d,i)=>drawPlayer(d.x,d.y,"enemy","",.78,d.dir));
+ teammates.forEach(t=>{drawRing(t.x,t.y,selected===t?"#fff12d":"#28d7ff");drawPlayer(t.x,t.y,"main","",.78,t.dir)});
+ const runner = teammates.find(t=>t.run);
+ if(runner){
+   ctx.fillStyle="#ffdf28";ctx.font="bold 17px Arial";ctx.textAlign="center";ctx.shadowColor="#ffdf28";ctx.shadowBlur=12;ctx.fillText("KOŞU YAPIYOR!",runner.x,runner.y-52);ctx.shadowBlur=0;
+   ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(runner.x,runner.y-38);ctx.lineTo(runner.x-8,runner.y-50);ctx.lineTo(runner.x+8,runner.y-50);ctx.fill();
+ }
+ drawPassingCone();drawArrowLine();
+ drawPlayer(passer.x,passer.y,"main","10",.9);
+ drawBall();
+ ctx.restore();
+}
+
+let last=performance.now();
+function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
